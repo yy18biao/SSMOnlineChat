@@ -1,0 +1,2 @@
+com.chat.redis.config.RedisConfig
+com.chat.redis.service.RedisService

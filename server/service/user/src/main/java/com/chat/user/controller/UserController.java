@@ -1,14 +1,14 @@
 package com.chat.user.controller;
 
+import com.chat.core.constants.HttpConstants;
+import com.chat.core.domain.LoginUserData;
 import com.chat.core.domain.Resp;
+import com.chat.core.domain.vo.LoginUserVO;
 import com.chat.user.domain.dto.UserAddDto;
 import com.chat.user.domain.dto.UserDto;
 import com.chat.user.service.UserService;
 import jakarta.annotation.Resource;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/user")
@@ -39,5 +39,15 @@ public class UserController {
     @PostMapping("/codeLogin")
     public Resp<String> codeLogin(@RequestBody UserDto userDto) {
         return Resp.ok(userService.codeLogin(userDto.getPhone(), userDto.getCode()));
+    }
+
+    @DeleteMapping("/logout")
+    public Resp<Void> logout(@RequestHeader(HttpConstants.AUTHENTICATION) String token) {
+        return userService.logout(token) ? Resp.ok() : Resp.fail();
+    }
+
+    @GetMapping("/getUser")
+    public Resp<LoginUserVO> getUser(@RequestHeader(HttpConstants.AUTHENTICATION) String token) {
+        return userService.getUser(token);
     }
 }

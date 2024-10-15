@@ -42,7 +42,7 @@
 <script setup>
 import {ref, reactive} from 'vue'
 import {setToken} from '@/utils/cookie'
-import {sendLoginCode, codeLoginService, passLoginService} from '@/apis/login'
+import {sendLoginCode, codeLoginService, passLoginService, regService} from '@/apis/login'
 import router from '@/router'
 
 let mobileForm = reactive({
@@ -87,17 +87,27 @@ async function getCode() {
 }
 
 async function loginPass() {
-  const loginRef = await passLoginService(mobileForm)
-  setToken(loginRef.data)
+  try {
+    const loginRef = await passLoginService(mobileForm)
+    setToken(loginRef.data)
+    router.push("/user/messageSession")
+  }catch (error) {
+    console.log("error:", error)
+  }
 }
 
 async function loginPhone() {
-  const loginRef = await codeLoginService(mobileForm)
-  setToken(loginRef.data)
+  try {
+    const loginRef = await codeLoginService(mobileForm)
+    setToken(loginRef.data)
+    router.push("/user/messageSession")
+  }catch (error) {
+    console.log("error:", error)
+  }
 }
 
 async function reg(){
-  router.push("/user/register")
+  await router.push("/user/register")
 }
 </script>
 
@@ -184,7 +194,6 @@ async function reg(){
       height: 100%;
       text-align: center;
       font-size: 20px;
-      color: rgb(76, 154, 255);
       border-bottom: 2px solid rgba(24, 144, 255);
     }
 
@@ -240,6 +249,7 @@ async function reg(){
       .verification-button {
         height: 100%;
         width: 30%;
+        color: black;
         border-radius: 5px;
         border-style: solid;
         border-width: 1px;

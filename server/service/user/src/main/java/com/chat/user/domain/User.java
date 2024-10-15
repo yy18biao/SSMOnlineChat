@@ -14,14 +14,14 @@ import lombok.EqualsAndHashCode;
 @TableName("user")
 public class User extends BaseEntity {
     @JsonSerialize(using = ToStringSerializer.class)
-    @TableId(value = "userID", type = IdType.ASSIGN_ID)
+    @TableId(value = "userId", type = IdType.ASSIGN_ID)
     private Long userId;
 
     private String password;
 
     private String nickname;
 
-    private String photo;
+    private String photo = "https://biao22.oss-cn-guangzhou.aliyuncs.com/%E9%BB%98%E8%AE%A4%E5%A4%B4%E5%83%8F.png";
 
     private String phone;
 

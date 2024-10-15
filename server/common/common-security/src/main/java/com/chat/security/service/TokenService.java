@@ -36,13 +36,35 @@ public class TokenService {
         loginUserData.setIdentity(identity);
         loginUserData.setNickname(nickname);
         loginUserData.setPhoto(photo);
+
+        redisService.set(key, loginUserData, RedisConstants.EXP, TimeUnit.MINUTES);
+
+        return token;
+    }
+
+    // 登录成功创建token
+    public String createToken(Long userId, String secret, Integer identity, String nickname, String photo) {
+        // 生成token
+        Map<String, Object> claims = new HashMap<>();
+        String userKey = UUID.fastUUID().toString();
+        claims.put("userId", userId);
+        claims.put("userKey", userKey);
+        String token = JwtUtils.createToken(claims, secret);
+
+        // 将用户敏感信息对象与userId存放到redis
+        String key = RedisConstants.LOGIN_TOKEN_KEY + userKey;
+        LoginUserData loginUserData = new LoginUserData();
+        loginUserData.setIdentity(identity);
+        loginUserData.setNickname(nickname);
+        loginUserData.setPhoto(photo);
+        loginUserData.setUserId(userId);
         redisService.set(key, loginUserData, RedisConstants.EXP, TimeUnit.MINUTES);
 
         return token;
     }
 
     // 延长token的有效时间
-    public void extendToken(Claims claims){
+    public void extendToken(Claims claims) {
         String userKey = getUserKey(claims);
         if (userKey == null) {
             return;
@@ -85,6 +107,7 @@ public class TokenService {
         if (claims == null) return null;
         return JwtUtils.getUserKey(claims);
     }
+
     private String getUserKey(String token, String secret) {
         Claims claims = getClaims(token, secret);
         if (claims == null) return null;

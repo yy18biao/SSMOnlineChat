@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: friend
+  profiles:
+    active: local
+  cloud:
+    nacos:
+      discovery:
+        namespace: 1d263397-b956-42bc-b4b3-9dad35df269f
+        server-addr: http://127.0.0.1:8848
+      config:
+        namespace: 1d263397-b956-42bc-b4b3-9dad35df269f
+        server-addr: http://127.0.0.1:8848
+        file-extension: yaml

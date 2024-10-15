@@ -2,8 +2,13 @@ package com.chat.user.service;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.RandomUtil;
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.chat.core.constants.HttpConstants;
 import com.chat.core.constants.RedisConstants;
+import com.chat.core.domain.LoginUserData;
+import com.chat.core.domain.Resp;
+import com.chat.core.domain.vo.LoginUserVO;
 import com.chat.core.enums.ResCode;
 import com.chat.core.enums.UserIdentity;
 import com.chat.core.utils.BCryptUtils;
@@ -14,6 +19,7 @@ import com.chat.sms.SMSService;
 import com.chat.user.domain.User;
 import com.chat.user.domain.dto.UserAddDto;
 import com.chat.user.domain.dto.UserDto;
+import com.chat.user.domain.vo.UserVo;
 import com.chat.user.mapper.UserMapper;
 import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Value;
@@ -97,6 +103,8 @@ public class UserService {
 
         User user = BeanUtil.copyProperties(userAddDto, User.class);
         user.setPassword(BCryptUtils.encrypt(user.getPassword()));
+
+        redisService.delete(RedisConstants.REG_PHONE_CODE_KEY + userAddDto.getPhone());
         return userMapper.insert(user);
     }
 
@@ -116,7 +124,9 @@ public class UserService {
             throw new ServiceException(ResCode.FAILED_LOGIN);
         }
 
-        return tokenService.createToken(user.getUserId().toString(), secret, UserIdentity.ORDINARY.getValue(), user.getNickname(), user.getPhoto());
+        return tokenService.createToken(user.getUserId(), secret,
+                                        UserIdentity.ORDINARY.getValue(), user.getNickname(),
+                                        user.getPhoto());
     }
 
     // 验证码登录
@@ -135,6 +145,36 @@ public class UserService {
             throw new ServiceException(ResCode.FAILED_CODE);
         }
 
-        return tokenService.createToken(user.getUserId().toString(), secret, UserIdentity.ORDINARY.getValue(), user.getNickname(), user.getPhoto());
+        redisService.delete(RedisConstants.LOGIN_PHONE_CODE_KEY + phone);
+
+        return tokenService.createToken(user.getUserId(),
+                                        secret, UserIdentity.ORDINARY.getValue(),
+                                        user.getNickname(), user.getPhoto());
+    }
+
+    public boolean logout(String token){
+        if (StrUtil.isNotEmpty(token) && token.startsWith(HttpConstants.PREFIX)) {
+            token = token.replaceFirst(HttpConstants.PREFIX, StrUtil.EMPTY);
+        }
+
+        return tokenService.deleteLoginUser(token, secret);
+    }
+
+    public Resp<LoginUserVO> getUser(String token){
+        // 判断token合理性和去除token前缀
+        if (StrUtil.isNotEmpty(token) && token.startsWith(HttpConstants.PREFIX)) {
+            token = token.replaceFirst(HttpConstants.PREFIX, StrUtil.EMPTY);
+        }
+
+        // 获取用户信息
+        LoginUserData loginUserData = tokenService.getLoginUser(token, secret);
+        if(loginUserData == null){
+            return Resp.fail();
+        }
+
+        LoginUserVO loginUserVO = new LoginUserVO();
+        loginUserVO.setNickname(loginUserData.getNickname());
+        loginUserVO.setPhoto(loginUserData.getPhoto());
+        return Resp.ok(loginUserVO);
     }
 }

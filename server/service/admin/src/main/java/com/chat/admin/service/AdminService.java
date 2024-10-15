@@ -63,7 +63,7 @@ public class AdminService {
         newAdmin.setPassword(BCryptUtils.encrypt(adminAddDto.getPassword()));
         newAdmin.setUserId(adminAddDto.getUserId());
 
-        return adminMapper.insert(admin);
+        return adminMapper.insert(newAdmin);
     }
     
     public Resp<LoginUserVO> getAdmin(String token) {

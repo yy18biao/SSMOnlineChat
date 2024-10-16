@@ -160,7 +160,7 @@ public class UserService {
         return tokenService.deleteLoginUser(token, secret);
     }
 
-    public Resp<LoginUserVO> getUser(String token){
+    public Resp<UserVo> getUser(String token){
         // 判断token合理性和去除token前缀
         if (StrUtil.isNotEmpty(token) && token.startsWith(HttpConstants.PREFIX)) {
             token = token.replaceFirst(HttpConstants.PREFIX, StrUtil.EMPTY);
@@ -172,9 +172,12 @@ public class UserService {
             return Resp.fail();
         }
 
-        LoginUserVO loginUserVO = new LoginUserVO();
-        loginUserVO.setNickname(loginUserData.getNickname());
-        loginUserVO.setPhoto(loginUserData.getPhoto());
-        return Resp.ok(loginUserVO);
+        User user = userMapper.selectById(loginUserData.getUserId());
+        if(user == null){
+            return null;
+        }
+        UserVo userVo = BeanUtil.copyProperties(user, UserVo.class);
+
+        return Resp.ok(userVo);
     }
 }

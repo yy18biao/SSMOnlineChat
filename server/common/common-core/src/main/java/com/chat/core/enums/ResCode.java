@@ -19,7 +19,12 @@ public enum ResCode {
     FAILED_PHONE(3100, "手机号码格式错误"),
     PHONE_EXISTS(3101, "手机号已被注册"),
     PASSWORD_NO_PASSWORD(3102, "两次密码不一致"),
-    FAILED_CODE(3103, "验证码错误");
+    FAILED_CODE(3103, "验证码错误"),
+
+    FRIEND_YES(3200, "该用户已经是您的好友"),
+    FRIEND_NO_ME(3201, "不可添加自己"),
+    APPLYED(3202, "已向对方发起申请，请等待对方处理"),
+    FRIEND_APPLYED(3303, "对方已向您发起申请，请处理");
 
     private int code;
     private String msg;

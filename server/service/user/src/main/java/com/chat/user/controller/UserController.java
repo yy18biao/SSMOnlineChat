@@ -6,6 +6,7 @@ import com.chat.core.domain.Resp;
 import com.chat.core.domain.vo.LoginUserVO;
 import com.chat.user.domain.dto.UserAddDto;
 import com.chat.user.domain.dto.UserDto;
+import com.chat.user.domain.vo.UserVo;
 import com.chat.user.service.UserService;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
@@ -47,7 +48,7 @@ public class UserController {
     }
 
     @GetMapping("/getUser")
-    public Resp<LoginUserVO> getUser(@RequestHeader(HttpConstants.AUTHENTICATION) String token) {
+    public Resp<UserVo> getUser(@RequestHeader(HttpConstants.AUTHENTICATION) String token) {
         return userService.getUser(token);
     }
 }

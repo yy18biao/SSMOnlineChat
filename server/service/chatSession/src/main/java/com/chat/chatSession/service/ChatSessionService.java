@@ -45,9 +45,12 @@ public class ChatSessionService {
             return null;
         }
 
-
         // 获取用户所在的所有会话id
         List<ChatSessionVo> chatSessionVoList = userChatSessionMapper.list(loginUserData.getUserId());
+        if(CollectionUtil.isEmpty(chatSessionVoList)){
+            return null;
+        }
+
         LinkedHashSet<Long> chatSessionIdList = new LinkedHashSet<>();
         for (ChatSessionVo chatSessionVo : chatSessionVoList) {
             chatSessionIdList.add(chatSessionVo.getChatSessionId());

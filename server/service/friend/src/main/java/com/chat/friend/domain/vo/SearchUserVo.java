@@ -5,13 +5,9 @@ import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import lombok.Data;
 
 @Data
-public class FriendSearchVo {
+public class SearchUserVo {
     @JsonSerialize(using = ToStringSerializer.class)
     private Long userId;
-    private String nickname;
     private String photo;
-    private String introduce;
-    private String email;
-    private String phone;
-    private String friendName;
+    private String nickname;
 }

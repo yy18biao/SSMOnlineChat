@@ -11,7 +11,7 @@ const router = createRouter({
     },
     {
       path: "/",
-      redirect: "/user/messageSession"
+      redirect: "/user/login"
     },
     {
       path: "/user/register",
@@ -22,43 +22,11 @@ const router = createRouter({
       path: "/user/main",
       name: "main",
       component: () => import("@/views/Main.vue"),
-      children: [
-        {
-          path: "/user/messageSession",
-          name: "messageSession",
-          component: () => import("@/views/MessageSession.vue"),
-          children:[
-              {
-                  path: "/user/messageSession/chatSession",
-                  name: "chatSession",
-                  component: () => import("@/views/ChatSession.vue"),
-              }
-          ]
-        },
-        {
-          path: "/user/friend",
-          name: "friend",
-          component: () => import("@/views/Friend.vue"),
-          children:[
-            {
-              path: "/user/friendData",
-              name: "friendData",
-              component: () => import("@/views/FriendData.vue"),
-            }
-          ]
-        },
-        {
-          path: "/user/set",
-          name: "set",
-          component: () => import("@/views/Set.vue"),
-        },
-      ]
-    },
+    }
   ]
 })
 
 export default router
-
 
 // 路由前置守卫
 router.beforeEach((to, from, next) => {
@@ -67,7 +35,7 @@ router.beforeEach((to, from, next) => {
   if (getToken()) {
     // 已经登录并且token没有过期则不需要到登录界面
     if (to.path === '/user/login') {
-      next({ path: '/user/layout/' })
+      next({ path: '/user/main' })
     } else {
       next()
     }

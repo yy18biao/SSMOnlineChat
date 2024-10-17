@@ -66,7 +66,6 @@ async function reg(){
     await regService(mobileForm)
     router.push("/user/login")
   }catch (error) {
-    console.log("error:", error)
   }
 }
 </script>

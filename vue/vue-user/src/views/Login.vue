@@ -41,7 +41,7 @@
 
 <script setup>
 import {ref, reactive} from 'vue'
-import {setToken} from '@/utils/cookie'
+import {setToken, setUserId} from '@/utils/cookie'
 import {sendLoginCode, codeLoginService, passLoginService} from '@/apis/login'
 import router from '@/router'
 
@@ -89,10 +89,10 @@ async function getCode() {
 async function loginPass() {
   try {
     const loginRef = await passLoginService(mobileForm)
-    setToken(loginRef.data)
+    setToken(loginRef.data[0])
+    setUserId(loginRef.data[1])
     router.push("/user/main")
   }catch (error) {
-    console.log("error:", error)
   }
 }
 
@@ -100,9 +100,10 @@ async function loginPhone() {
   try {
     const loginRef = await codeLoginService(mobileForm)
     setToken(loginRef.data)
+    setUserId(loginRef.data[1])
     router.push("/user/main")
   }catch (error) {
-    console.log("error:", error)
+
   }
 }
 

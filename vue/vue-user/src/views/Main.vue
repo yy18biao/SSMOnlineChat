@@ -6,18 +6,39 @@ import MidSession from "@/components/MidSession.vue";
 import RightSession from "@/components/RightSession.vue";
 import MidFriend from "@/components/MidFriend.vue";
 import RightFriend from "@/components/RightFriend.vue";
-import {getUserService, logoutService} from "@/apis/user.js";
+import {
+  getUserService,
+  logoutService, updatePasswordCodeService,
+  updatePasswordService,
+  updatePhoneCodeService,
+  updateUserService
+} from "@/apis/user.js";
 import {removeToken} from "@/utils/cookie.js";
 import router from "@/router/index.js";
+import {addChatSessionListService, getChatSessionListService, searchChatSessionService} from "@/apis/chatSession.js";
+import {getMessageAllService} from "@/apis/message.js";
+
+let txt = ref('获取验证码')
+let timer = null
 
 // 中间框的启动标志 1 聊天会话 2 好友列表
 const midFlag = ref(1)
 // 右侧框的启动标志 1 聊天会话详情 2 好友详情
 const rightFlag = ref(0)
+// 个人设置开启标志
+const drawer = ref(false)
 // 当前聊天会话的id
 const curChatSessionId = ref('')
 // 当前选中好友的数据
 let curFriendData = reactive({})
+// 所有的会话列表
+const sessionDataList = reactive([])
+// 当前选中会话id
+let curSessionId = ref('')
+// 当前选中会话名
+let curSessionName = ref('')
+// 存放当前会话的消息
+const messageData = reactive([])
 // 中间好友列表子组件实例
 const midFriendRef = ref(null)
 
@@ -32,14 +53,6 @@ async function openMidFriend() {
   midFlag.value = 2
   rightFlag.value = 0
 }
-
-// 开启中间聊天会话
-async function openRightSession() {
-  rightFlag.value = 1
-}
-
-// 个人设置开启标志
-const drawer = ref(false)
 
 // 开启个人设置
 async function openSet() {
@@ -59,7 +72,8 @@ const loginUser = reactive({
   code: ''
 })
 
-let updateUser = reactive({
+// 用于修改个人信息
+const updateUserData = reactive({
   nickname: '',
   photo: '',
   email: '',
@@ -68,18 +82,56 @@ let updateUser = reactive({
   code: ''
 })
 
+// 用于修改密码
+let updatePasswordData = reactive({
+  oldPassword: '',
+  newPassword: '',
+  confirmPassword: '',
+  code: ''
+})
+
+// 赋值
+function aToB(A, B) {
+  A.nickname = B.nickname;
+  A.photo = B.photo;
+  A.email = B.email;
+  A.introduce = B.introduce;
+  A.phone = B.phone;
+}
+
 // 获取个人信息
 async function getUser() {
   const user = await getUserService();
-  loginUser.nickname = user.data.nickname;
-  loginUser.photo = user.data.photo;
-  loginUser.email = user.data.email;
-  loginUser.introduce = user.data.introduce;
-  loginUser.phone = user.data.phone;
-  updateUser = loginUser
+  aToB(loginUser, user.data);
+  aToB(updateUserData, loginUser);
 }
 
 getUser()
+
+// 获取会话列表
+async function getChatSessionList() {
+  const chatSessions = await getChatSessionListService();
+
+  if (chatSessions.data !== null) {
+    for (let i = 0; i < chatSessions.data.length; i++) {
+      let chatSessionId = chatSessions.data[i].chatSessionId
+      let chatSessionName = chatSessions.data[i].chatSessionName
+      if (chatSessionName !== null) {
+        chatSessionName = chatSessionName.length > 15 ? chatSessionName.substring(0, 15) + '...' : chatSessionName
+      }
+      let chatSessionLastMessage = chatSessions.data[i].chatSessionLastMessage
+      if (chatSessionLastMessage !== null) {
+        chatSessionLastMessage = chatSessionLastMessage.length > 9 ? chatSessionLastMessage.substring(0, 9) + '...' : chatSessionLastMessage
+      }
+      let chatSessionPhoto = chatSessions.data[i].chatSessionPhoto
+
+      sessionDataList.push({chatSessionId, chatSessionName, chatSessionLastMessage, chatSessionPhoto})
+    }
+  }
+}
+
+if (sessionDataList.length <= 0)
+  getChatSessionList()
 
 // 退出登录
 async function logout() {
@@ -88,9 +140,89 @@ async function logout() {
   await router.push("/user/login")
 }
 
+// 修改个人信息
+async function updateUser() {
+  await updateUserService(updateUserData)
+  aToB(loginUser, updateUserData);
+  alert("修改成功")
+  updateUserData.code = ''
+}
+
+// 获取修改手机验证码
+async function updatePhoneCode() {
+  if (updateUserData.phone === loginUser.phone) {
+    return alert("请输入新的手机号码")
+  }
+  await updatePhoneCodeService(updateUserData.phone)
+  txt.value = '59s'
+  let num = 59
+  timer = setInterval(() => {
+    num--
+    if (num < 1) {
+      txt.value = '重新获取验证码'
+      clearInterval(timer)
+    } else {
+      txt.value = num + 's'
+    }
+  }, 1000)
+}
+
+// 修改密码
+async function updatePassword() {
+  if (updatePasswordData.oldPassword === '') {
+    return alert("请输入当前密码")
+  }
+  if (updatePasswordData.newPassword === '') {
+    return alert("请输入修改密码")
+  }
+  if (updatePasswordData.confirmPassword === '') {
+    return alert("请再次确认密码")
+  }
+  if (updatePasswordData.newPassword !== updatePasswordData.confirmPassword) {
+    return alert("两次密码不一致")
+  }
+  if (updatePasswordData.code === '') {
+    return alert("请输入验证码")
+  }
+  await updatePasswordService(updatePasswordData)
+  alert("修改成功")
+  updatePasswordData = {}
+}
+
+// 获取修改密码验证码
+async function sendUpdatePassword() {
+  await updatePasswordCodeService(loginUser.phone)
+  txt.value = '59s'
+  let num = 59
+  timer = setInterval(() => {
+    num--
+    if (num < 1) {
+      txt.value = '重新获取验证码'
+      clearInterval(timer)
+    } else {
+      txt.value = num + 's'
+    }
+  }, 1000)
+}
+
 // 点击中间会话处理回调
-async function handleOpenChatRight(chatMessageId) {
-  curChatSessionId.value = chatMessageId;
+async function handleOpenChatRight(chatSessionId, chatSessionName) {
+  curChatSessionId.value = chatSessionId
+  curSessionName.value = chatSessionName
+  const messageAll = await getMessageAllService(chatSessionId)
+  messageData.splice(0, messageData.length)
+  for (let i = 0; i < messageAll.data.length; i++) {
+    messageData.push(messageAll.data[i])
+  }
+  // 将该对话置顶
+  for (let i = 0; i < sessionDataList.length; i++) {
+    if (sessionDataList[i].chatSessionId === curChatSessionId.value) {
+      const [targetItem] = sessionDataList.splice(i, 1);
+      curSessionName.value = targetItem.chatSessionName
+      sessionDataList.unshift(targetItem);
+      break;
+    }
+  }
   rightFlag.value = 1
 }
 
@@ -111,6 +243,37 @@ function handleDeleteRemark(friendData) {
   midFriendRef.value.deleteList(friendData)
   rightFlag.value = 0
 }
+
+// 点击开启聊天信号回调
+async function handleAddChatSession(friendId) {
+  const id = await addChatSessionListService(friendId)
+  curChatSessionId.value = id.data
+
+  // 先在当前的列表中找看有没有
+  let index = 0
+  for (let i = 0; i < sessionDataList.length; i++) {
+    if (sessionDataList[i].chatSessionId === curChatSessionId.value) {
+      index = i
+      break;
+    }
+  }
+  // 找到了就将这一项移到数组开头
+  if (index !== 0) {
+    const [targetItem] = sessionDataList.splice(index, 1);
+    curSessionName.value = targetItem.chatSessionName
+    sessionDataList.unshift(targetItem);
+  }
+  // 没有找到就访问后端获取会话基本数据
+  else {
+    const newData = await searchChatSessionService(curChatSessionId.value)
+    curSessionName.value = newData.data.chatSessionName
+    // 插入到数组的开头
+    sessionDataList.unshift(newData.data);
+  }
+  midFlag.value = 1
+  rightFlag.value = 1
+}
+
 </script>
 
 <template>
@@ -134,10 +297,8 @@ function handleDeleteRemark(friendData) {
       <div class="left">
         <el-menu class="el-menu">
           <el-menu-item>
-            <el-upload
-                action=""
-                :show-file-list="false"
-            >
+            <!--            TODO 头像上传-->
+            <el-upload action="" :show-file-list="false">
               <img class="photo" v-if="loginUser.photo" :src="loginUser.photo"/>
               <el-icon v-else>
                 <Plus/>
@@ -162,38 +323,42 @@ function handleDeleteRemark(friendData) {
         </el-menu>
       </div>
       <div class="mid">
-        <mid-session v-if="midFlag === 1" @openChatSessionRight="handleOpenChatRight"></mid-session>
-        <mid-friend v-if="midFlag === 2" @openFriendRight="handleOpenFriendRight" ref="midFriendRef"></mid-friend>
+        <mid-session v-if="midFlag === 1" @openChatSessionRight="handleOpenChatRight"
+                     :chat-session-id="curChatSessionId" :session-data-list="sessionDataList"
+                     :right-flag="rightFlag"/>
+        <mid-friend v-if="midFlag === 2" @openFriendRight="handleOpenFriendRight" ref="midFriendRef"/>
       </div>
       <div class="right">
-        <right-session v-if="rightFlag === 1" :chatSessionId="curChatSessionId"></right-session>
+        <right-session v-if="rightFlag === 1" :chat-session-id="curChatSessionId"
+                       :chat-session-name="curSessionName" :message-data="messageData"/>
         <right-friend v-if="rightFlag === 2" :friendData="curFriendData"
-                      @updateRemark="handleUpdateRemark" @deleteFriend="handleDeleteRemark"></right-friend>
+                      @updateRemark="handleUpdateRemark" @deleteFriend="handleDeleteRemark"
+                      @addChatSession="handleAddChatSession"/>
       </div>
     </el-main>
   </el-container>
 
   <el-drawer v-model="drawer" :destroy-on-close="true" :with-header="false" size="50%">
     <div>昵称：
-      <el-input v-model="updateUser.nickname" size="default" input-style="width: 100px"></el-input>
+      <el-input v-model="updateUserData.nickname" size="default" input-style="width: 100px"></el-input>
     </div>
     <div>邮箱：
-      <el-input v-model="updateUser.email" size="default" input-style="width: 100px"></el-input>
+      <el-input v-model="updateUserData.email" size="default" input-style="width: 100px"></el-input>
     </div>
     <div>签名：
-      <el-input v-model="updateUser.introduce" size="default" input-style="width: 100px"></el-input>
+      <el-input v-model="updateUserData.introduce" size="default" input-style="width: 100px"></el-input>
     </div>
     <div>电话：</div>
     <div style="display: flex">
-      <el-input v-model="updateUser.phone" size="default" input-style="width: 100px"></el-input>
-      <el-button :type="'primary'">获取验证码</el-button>
+      <el-input v-model="updateUserData.phone" size="default" input-style="width: 100px"></el-input>
+      <el-button :type="'primary'" @click="updatePhoneCode">{{ txt }}</el-button>
     </div>
     <div>验证码：
-      <el-input v-model="updateUser.code" size="default"
+      <el-input v-model="updateUserData.code" size="default"
                 input-style="width: 100px"></el-input>
     </div>
     <div style="margin-top: 100px">
-      <el-button :type="'primary'">确认修改</el-button>
+      <el-button :type="'primary'" @click="updateUser">确认修改</el-button>
     </div>
     <div style="margin-top: 10px">
       <el-button :type="'warning'" @click="updateDialogFlag = true">修改密码</el-button>
@@ -202,14 +367,16 @@ function handleDeleteRemark(friendData) {
 
   <!--  修改密码弹窗-->
   <el-dialog v-model="updateDialogFlag" title="修改密码" width="500" align-center>
-    <el-input placeholder="输入当前密码"></el-input>
+    <el-input placeholder="输入当前密码" v-model="updatePasswordData.oldPassword"></el-input>
+    <el-input placeholder="输入修改密码" v-model="updatePasswordData.newPassword"></el-input>
+    <el-input placeholder="确认修改密码" v-model="updatePasswordData.confirmPassword"></el-input>
     <div style="display: flex">
-      <el-input placeholder="输入验证码"></el-input>
-      <el-button :type="'primary'">获取验证码</el-button>
+      <el-input placeholder="输入验证码" v-model="updatePasswordData.code"></el-input>
+      <el-button :type="'primary'" @click="sendUpdatePassword">{{ txt }}</el-button>
     </div>
     <template #footer>
       <div class="dialog-footer">
-        <el-button>确认修改</el-button>
+        <el-button @click="updatePassword">确认修改</el-button>
         <el-button @click="updateDialogFlag = false">取消</el-button>
       </div>
     </template>

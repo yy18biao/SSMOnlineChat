@@ -2,6 +2,7 @@ package com.chat.friend.controller;
 
 import com.chat.core.constants.HttpConstants;
 import com.chat.core.domain.Resp;
+import com.chat.core.utils.ThreadLocalUtil;
 import com.chat.friend.domain.FriendApply;
 import com.chat.friend.domain.dto.FriendSearchDto;
 import com.chat.friend.domain.dto.FriendUpdateDto;
@@ -49,21 +50,21 @@ public class FriendController {
     }
 
     // 添加好友
-    // TODO 连续提交申请
     @PostMapping("/addFriend")
     public Resp<Void> addFriend(@RequestParam Long friendId, @RequestHeader(HttpConstants.AUTHENTICATION) String token) {
-        return friendService.addFriend(friendId, token) >0 ? Resp.ok() : Resp.fail();
+        return friendService.addFriend(friendId, token) > 0 ? Resp.ok() : Resp.fail();
     }
 
     // 查看好友申请列表
     @GetMapping("/friendApplyList")
-    public Resp<List<FriendApply>> friendApplyList(@RequestHeader(HttpConstants.AUTHENTICATION) String token){
+    public Resp<List<FriendApply>> friendApplyList(@RequestHeader(HttpConstants.AUTHENTICATION) String token) {
         return Resp.ok(friendService.friendApplyList(token));
     }
 
     // 同意好友申请
     @PostMapping("/agreeFriendApply")
-    public Resp<Void> agreeFriendApply(Long friendId, @RequestHeader(HttpConstants.AUTHENTICATION) String token) {
+    public Resp<Void> agreeFriendApply(@RequestParam Long friendId,
+                                       @RequestHeader(HttpConstants.AUTHENTICATION) String token) {
         return friendService.agreeFriendApply(friendId, token) ? Resp.ok() : Resp.fail();
     }
 

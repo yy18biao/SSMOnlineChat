@@ -39,15 +39,20 @@ async function getFriendList() {
 
   for (let i = 0; i < friends.data.length; i++) {
     let friendId = friends.data[i].friendId
-    let friendName = friends.data[i].friendName
-    if (friendName.length > 10)
-      friendName = friendName.substring(0, 10) + '...'
+
+    let friendName = ''
+    if (friends.data[i].friendName !== null && friends.data[i].friendName !== '')
+      friendName = friends.data[i].friendName
+    else
+      friendName = friends.data[i].nickname
+    friendName = friendName.length > 10 ? friendName.substring(0, 10) + '...' : friendName
+
     let photo = friends.data[i].photo
     let email = friends.data[i].email
     let phone = friends.data[i].phone
     let introduce = friends.data[i].introduce
     let nickname = friends.data[i].nickname
-    friendData.push({friendId, friendName, email,  phone, introduce, nickname, photo})
+    friendData.push({friendId, friendName, email, phone, introduce, nickname, photo})
   }
 }
 
@@ -75,7 +80,7 @@ async function addFriend(friendId) {
 }
 
 // 查看好友申请列表
-async function friendApplyList(){
+async function friendApplyList() {
   const friendApply = await friendApplyListService()
   for (let i = 0; i < friendApply.data.length; i++) {
     let userId = friendApply.data[i].userId
@@ -85,6 +90,7 @@ async function friendApplyList(){
     applyData.push({userId, nickname, photo})
   }
 }
+
 friendApplyList()
 
 // 同意好友申请
@@ -106,8 +112,8 @@ async function refuseFriendApply(index) {
 }
 
 // 删除列表中的某一项
-async function deleteList(idnex) {
-  friendData.splice(idnex, 1)
+async function deleteList(index) {
+  friendData.splice(index, 1)
 }
 
 // 将方法暴露给父组件
@@ -121,7 +127,7 @@ getFriendList()
 
 <template>
   <el-container>
-    <el-header style="display: flex; justify-content: center; align-items: center;">
+    <el-header style="height: 40px; display: flex; justify-content: center; align-items: center;">
       <el-input v-model=searchName style="width: 200px;margin-top: 20px" placeholder="请输入好友昵称"
                 :prefix-icon="Search"/>
       <el-button type="primary" style="margin-top: 20px; width: 20px; margin-left: 10px"
@@ -154,8 +160,8 @@ getFriendList()
       </el-dialog>
     </el-header>
 
-    <el-main>
-      <el-button type="text" style="width: 100%;" @click="applyDialogFlag = true">好友申请列表</el-button>
+    <el-main style="height: 660px; overflow: scroll; scrollbar-width: none;">
+      <el-button type="text" style="width: 100%; height: 20px" @click="applyDialogFlag = true">好友申请列表</el-button>
       <el-dialog v-model="applyDialogFlag" title="好友申请列表" width="500" align-center>
         <el-menu style="height: 300px">
           <el-menu-item class="el-menu-item" v-for="(index) in applyData">

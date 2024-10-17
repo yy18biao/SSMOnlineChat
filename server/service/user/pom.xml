@@ -25,11 +25,6 @@
         </dependency>
         <dependency>
             <groupId>com.chat</groupId>
-            <artifactId>common-core</artifactId>
-            <version>${common-core.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.chat</groupId>
             <artifactId>common-security</artifactId>
             <version>${common-security.version}</version>
         </dependency>

@@ -16,6 +16,7 @@
         <module>user</module>
         <module>chatSession</module>
         <module>friend</module>
+        <module>message</module>
     </modules>
 
     <properties>

@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapp
 import com.chat.core.constants.HttpConstants;
 import com.chat.core.domain.LoginUserData;
 import com.chat.core.enums.ResCode;
+import com.chat.core.utils.ThreadLocalUtil;
 import com.chat.friend.domain.Friend;
 import com.chat.friend.domain.FriendApply;
 import com.chat.friend.domain.User;
@@ -24,7 +25,6 @@ import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -78,14 +78,11 @@ public class FriendService {
         // 获取用户信息
         LoginUserData loginUserData = getLoginUserData(token);
 
-        Friend friend = new Friend();
-        friend.setFriendId(friendId);
-        friend.setFriendName(friendName);
-        friend.setUserId(loginUserData.getUserId());
+        ThreadLocalUtil.set("curUserId", loginUserData.getUserId());
+        int i = friendMapper.updateRemark(friendName, friendId, loginUserData.getUserId());
+        ThreadLocalUtil.remove();
 
-        return friendMapper.update(friend, new LambdaUpdateWrapper<Friend>()
-                .eq(Friend::getUserId, loginUserData.getUserId())
-                .eq(Friend::getFriendId, friendId));
+        return i;
     }
 
     public boolean deleteFriend(Long friendId, String token) {
@@ -145,7 +142,11 @@ public class FriendService {
         apply.setNickname(loginUserData.getNickname());
         apply.setPhoto(loginUserData.getPhoto());
 
-        return friendApplyMapper.insert(apply);
+        ThreadLocalUtil.set("curUserId", loginUserData.getUserId());
+        int i = friendApplyMapper.insert(apply);
+        ThreadLocalUtil.remove();
+
+        return i;
     }
 
     public List<FriendApply> friendApplyList(String token) {
@@ -177,16 +178,21 @@ public class FriendService {
         friend1.setFriendName(loginUserData.getNickname());
         friend1.setFriendPhoto(loginUserData.getPhoto());
 
-        return friendMapper.insert(friend) > 0
+        ThreadLocalUtil.set("curUserId", loginUserData.getUserId());
+        boolean i = friendMapper.insert(friend) > 0
                 && friendMapper.insert(friend1) > 0
                 && friendApplyMapper.delete(new LambdaQueryWrapper<FriendApply>()
                 .eq(FriendApply::getFriendId, loginUserData.getUserId())) > 0;
+        ThreadLocalUtil.remove();
+
+        return i;
     }
 
     public int refuseFriendApply(Long friendId, String token){
         LoginUserData loginUserData = getLoginUserData(token);
 
         return friendApplyMapper.delete(new LambdaQueryWrapper<FriendApply>()
-                .eq(FriendApply::getFriendId, loginUserData.getUserId()));
+                .eq(FriendApply::getFriendId, loginUserData.getUserId())
+                .eq(FriendApply::getUserId, friendId));
     }
 }

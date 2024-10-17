@@ -1,6 +1,7 @@
 import axios from "axios"
 import { getToken, removeToken} from "./cookie";
 import router from "@/router";
+import {ElMessage} from "element-plus";
 
 // 设置请求的格式
 axios.defaults.headers["Content-Type"] = "application/json;charset=utf-8";

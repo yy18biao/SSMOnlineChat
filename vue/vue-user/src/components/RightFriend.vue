@@ -8,7 +8,7 @@ import {deleteFriendService, searchFriendService, updateRemarkService} from "@/a
 const isDisabled = ref(true)
 
 // 信号
-const emit = defineEmits(['updateRemark', "deleteFriend"]);
+const emit = defineEmits(['updateRemark', "deleteFriend", "addChatSession"]);
 
 const props = defineProps({
   friendData:{
@@ -29,6 +29,11 @@ function updateRemark(friendName, friendId) {
   // 发送信号给父组件
   emit('updateRemark', friendId, friendName);
 }
+
+function addChatSession(friendId) {
+  // 发送信号给父组件
+  emit('addChatSession', friendId);
+}
 </script>
 
 <template>
@@ -38,7 +43,7 @@ function updateRemark(friendName, friendId) {
       <div class="remark">
         <el-input size="default" v-model="friendData.friendName" :disabled="isDisabled"
                   input-style="background-color: #f2f2f2; font-size:15px; border: none; width: 180px;"
-                  @change="updateRemark(friendData.friendName, friendData.userId)"/>
+                  @change="updateRemark(friendData.friendName, friendData.friendId)"/>
         <el-button style="background-color: #f2f2f2; border: none" @click="isDisabled = false">
           <el-icon size="20px">
             <Edit/>
@@ -51,7 +56,8 @@ function updateRemark(friendName, friendId) {
       <div style="display: flex">邮箱：<div>{{ friendData.email }}</div></div>
       <div style="display: flex">签名：<div style="max-width: 100px;">{{ friendData.introduce }}</div></div>
       <div class="button">
-        <el-button type="primary" style="width: 40px; height: 40px; border: none; margin-right: auto">
+        <el-button type="primary" style="width: 40px; height: 40px; border: none; margin-right: auto"
+                   @click="addChatSession(friendData.friendId)">
           <el-icon size="40px">
             <ChatDotSquare/>
           </el-icon>

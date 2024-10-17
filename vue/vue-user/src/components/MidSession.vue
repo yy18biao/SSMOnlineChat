@@ -1,57 +1,48 @@
 <script setup>
 
-import {ref, reactive, defineEmits } from "vue";
+import {ref, reactive, defineEmits, watch} from "vue";
 import {Search} from "@element-plus/icons-vue";
-import {getChatSessionListService} from "@/apis/chatSession.js";
-import router from "@/router/index.js";
+import {getChatSessionListService, searchChatSessionService} from "@/apis/chatSession.js";
 
 const searchName = ref('')
-const sessionData = reactive([])
+
+const props = defineProps({
+  curSessionId: {
+    required: true,
+    type: Number,
+  },
+  sessionDataList: {
+    required: true
+  },
+  rightFlag: {
+    required: true,
+  }
+})
 
 // 点击会话信号
 const emit = defineEmits(['openChatSessionRight']);
 
 // 触发点击会话信号处理
-function openChatSessionRight(chatSessionId) {
-  emit('openChatSessionRight', chatSessionId);
-}
-
-// 获取会话列表
-async function getChatSessionList() {
-  try {
-    const chatSessions = await getChatSessionListService();
-
-    for (let i = 0; i < chatSessions.data.length; i++) {
-      let chatSessionId = chatSessions.data[i].chatSessionId
-      let chatSessionName = chatSessions.data[i].chatSessionName
-      let chatSessionLastMessage = chatSessions.data[i].chatSessionLastMessage.substring(0, 9) + '...'
-      let chatSessionPhoto = chatSessions.data[i].chatSessionPhoto
-
-      sessionData.push({chatSessionId, chatSessionName, chatSessionLastMessage, chatSessionPhoto})
-    }
-  }catch (e){
-    console.error(e)
-    await router.push("/user/login")
+function openChatSessionRight(index) {
+  // 如果点击的会话不是当前会话则通知父组件
+  if (props.rightFlag !== 1 || props.sessionDataList[0].chatSessionId !== index.chatSessionId) {
+    emit('openChatSessionRight', index.chatSessionId, index.chatSessionName);
   }
-
-  return sessionData
 }
-getChatSessionList()
-
 
 </script>
 
 <template>
   <el-container>
-    <el-header class="el-header">
-      <el-input v-model=searchName style="width: 200px;margin-top: 20px" placeholder="请输入会话名"
+    <el-header style="height: 70px">
+      <el-input v-model=searchName style="width: 200px; margin-top: 20px" placeholder="请输入会话名"
                 :prefix-icon="Search"/>
     </el-header>
 
-    <el-main style="width: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+    <el-main style="width: 100%; height: 630px; overflow: scroll; scrollbar-width: none;
+                    display: flex; flex-direction: column; justify-content: center; align-items: center;">
       <el-menu class="el-menu">
-        <el-menu-item class="el-menu-item" v-for="(index) in sessionData"
-                      @click="openChatSessionRight(index.chatSessionId)">
+        <el-menu-item class="el-menu-item" v-for="(index) in sessionDataList" @click="openChatSessionRight(index)">
           <div class="photo">
             <el-avatar :src=index.chatSessionPhoto size="large"/>
           </div>

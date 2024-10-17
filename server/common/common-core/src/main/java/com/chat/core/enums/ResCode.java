@@ -24,7 +24,9 @@ public enum ResCode {
     FRIEND_YES(3200, "该用户已经是您的好友"),
     FRIEND_NO_ME(3201, "不可添加自己"),
     APPLYED(3202, "已向对方发起申请，请等待对方处理"),
-    FRIEND_APPLYED(3303, "对方已向您发起申请，请处理");
+    FRIEND_APPLYED(3303, "对方已向您发起申请，请处理"),
+
+    OLD_PASSWORD_NO_PASSWORD(3400, "当前密码错误");
 
     private int code;
     private String msg;

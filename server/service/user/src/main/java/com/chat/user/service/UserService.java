@@ -24,6 +24,8 @@ import com.chat.user.domain.dto.UserUpdateDto;
 import com.chat.user.domain.vo.UserVo;
 import com.chat.user.mapper.UserMapper;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -160,7 +162,7 @@ public class UserService {
     }
 
     // 密码登录
-    public List<String> passLogin(String phone, String password) {
+    public List<String> passLogin(String phone, String password, HttpServletRequest request) {
         // 判断手机号码是否合理
         if (!checkPhone(phone)) {
             throw new ServiceException(ResCode.FAILED_PHONE);
@@ -180,6 +182,9 @@ public class UserService {
                 UserIdentity.ORDINARY.getValue(), user.getNickname(),
                 user.getPhoto()));
         list.add(user.getUserId().toString());
+
+        HttpSession session = request.getSession(true);
+        session.setAttribute("userId", user.getUserId());
 
         return list;
     }

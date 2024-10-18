@@ -11,6 +11,7 @@ import com.chat.user.domain.dto.UserUpdateDto;
 import com.chat.user.domain.vo.UserVo;
 import com.chat.user.service.UserService;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -47,8 +48,8 @@ public class UserController {
     }
 
     @PostMapping("/passLogin")
-    public Resp<List<String>> passLogin(@RequestBody UserDto userDto) {
-        return Resp.ok(userService.passLogin(userDto.getPhone(), userDto.getPassword()));
+    public Resp<List<String>> passLogin(@RequestBody UserDto userDto, HttpServletRequest request) {
+        return Resp.ok(userService.passLogin(userDto.getPhone(), userDto.getPassword(), request));
     }
 
     @PostMapping("/codeLogin")

@@ -2,7 +2,6 @@
 import {ChatLineRound, Folder, More} from "@element-plus/icons-vue";
 import {reactive, ref, defineProps, watch} from 'vue'
 import {getUserId} from "@/utils/cookie.js";
-import {getMessageAllService} from "@/apis/message.js";
 
 const props = defineProps({
   chatSessionId: {

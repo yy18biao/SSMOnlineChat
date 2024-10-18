@@ -21,7 +21,6 @@ import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 
@@ -164,5 +163,9 @@ public class ChatSessionService {
         }
 
         return BeanUtil.copyProperties(chatSession, ChatSessionVo.class);
+    }
+
+    public List<Long> selectAllUserId(Long chatSessionId){
+        return chatSessionUserMapper.selectAllUserId(chatSessionId);
     }
 }

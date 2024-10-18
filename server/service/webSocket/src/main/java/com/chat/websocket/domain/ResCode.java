@@ -1,4 +1,4 @@
-package com.chat.core.enums;
+package com.chat.websocket.domain;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

@@ -17,6 +17,7 @@
         <module>chatSession</module>
         <module>friend</module>
         <module>message</module>
+        <module>webSocket</module>
     </modules>
 
     <properties>
@@ -41,13 +42,6 @@
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
-        </dependency>
-
-        <!--        mybatis分页插件-->
-        <dependency>
-            <groupId>com.github.pagehelper</groupId>
-            <artifactId>pagehelper-spring-boot-starter</artifactId>
-            <version>${pagehelper.version}</version>
         </dependency>
     </dependencies>
 

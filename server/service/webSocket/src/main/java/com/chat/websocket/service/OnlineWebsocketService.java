@@ -1,6 +1,5 @@
-package com.chat.message.service;
+package com.chat.websocket.service;
 
-import com.chat.core.utils.ThreadLocalUtil;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.WebSocketSession;
 

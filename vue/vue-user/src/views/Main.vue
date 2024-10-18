@@ -274,6 +274,58 @@ async function handleAddChatSession(friendId) {
   rightFlag.value = 1
 }
 
+// websocket连接
+const webSocket = new WebSocket("ws://127.0.0.1:8001/onlineChat")
+
+webSocket.onopen = function () {
+  console.log("websocket连接成功")
+}
+
+webSocket.onmessage = function (message) {
+  const resp = JSON.parse(message.data)
+
+  // 判断当前选中的会话是否为新消息的会话
+  if (curChatSessionId.value === resp.message.chatSessionId) {
+    // 如果是则添加新的消息数据
+    console.log(resp.message)
+    messageData.push(resp.message)
+    // 修改当前选中会话的最后一条消息数据
+    sessionDataList[0].chatSessionLastMessage = resp.message.content.length > 9 ? resp.message.content.substring(0, 9) + "..." : resp.message.content
+  } else {
+    console.log(resp.message)
+    // 找到中间会话列表这一项
+    let index = -1
+    for (let i = 1; i < sessionDataList.length; i++) {
+      if (sessionDataList[i].chatSessionId === resp.message.chatSessionId) {
+        index = i
+        break
+      }
+    }
+    // 如果没找到则创建新的会话
+    if (index === -1) {
+      sessionDataList.push({chatSessionId, chatSessionName, chatSessionLastMessage, chatSessionPhoto})
+      sessionDataList.unshift({
+        chatSessionId: resp.message.chatSessionId,
+        chatSessionName: resp.message.nickname,
+        chatSessionLastMessage: resp.message.content.length > 9 ? resp.message.content.substring(0, 9) + "..." : resp.message.content,
+        chatSessionPhoto: resp.message.photo
+      })
+    }
+    else {
+      // 找到了则修改最后一条数据
+      sessionDataList[index].chatSessionLastMessage = resp.message.content.length > 9 ? resp.message.content.substring(0, 9) + "..." : resp.message.content
+    }
+  }
+}
+
+webSocket.onclose = function (){
+
+}
+
+webSocket.onerror = function (){
+  console.log("连接失败")
+}
+
 </script>
 
 <template>

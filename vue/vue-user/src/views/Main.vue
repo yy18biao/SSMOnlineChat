@@ -1,7 +1,7 @@
 <script setup>
 
 import {ArrowDownBold, ChatSquare, SwitchButton, User, Tools, Plus} from "@element-plus/icons-vue";
-import {reactive, ref} from "vue";
+import {reactive, ref, onMounted, onUnmounted} from "vue";
 import MidSession from "@/components/MidSession.vue";
 import RightSession from "@/components/RightSession.vue";
 import MidFriend from "@/components/MidFriend.vue";
@@ -13,13 +13,23 @@ import {
   updatePhoneCodeService,
   updateUserService
 } from "@/apis/user.js";
-import {removeToken} from "@/utils/cookie.js";
+import {getToken, removeToken} from "@/utils/cookie.js";
 import router from "@/router/index.js";
 import {addChatSessionListService, getChatSessionListService, searchChatSessionService} from "@/apis/chatSession.js";
-import {getMessageAllService} from "@/apis/message.js";
+import {deleteWebSocketService, getMessageAllService} from "@/apis/message.js";
 
 let txt = ref('获取验证码')
 let timer = null
+
+// 挂载关闭窗口时告诉后端需要移除对websocket的记录
+onMounted(() => {
+  window.addEventListener('beforeunload', deleteWebSocketService);
+});
+
+// 退出登录后移除此监听
+onUnmounted(() => {
+  window.removeEventListener('beforeunload', deleteWebSocketService);
+});
 
 // 中间框的启动标志 1 聊天会话 2 好友列表
 const midFlag = ref(1)
@@ -33,14 +43,14 @@ const curChatSessionId = ref('')
 let curFriendData = reactive({})
 // 所有的会话列表
 const sessionDataList = reactive([])
-// 当前选中会话id
-let curSessionId = ref('')
 // 当前选中会话名
 let curSessionName = ref('')
 // 存放当前会话的消息
 const messageData = reactive([])
 // 中间好友列表子组件实例
 const midFriendRef = ref(null)
+// 右侧滑动条是否沉底标志
+const isScrollable = ref(true)
 
 // 开启中间聊天会话
 async function openMidSession() {
@@ -50,6 +60,7 @@ async function openMidSession() {
 
 // 开启中间好友列表
 async function openMidFriend() {
+
   midFlag.value = 2
   rightFlag.value = 0
 }
@@ -128,6 +139,10 @@ async function getChatSessionList() {
       sessionDataList.push({chatSessionId, chatSessionName, chatSessionLastMessage, chatSessionPhoto})
     }
   }
+
+  // 触发一次右侧会话消息显示列表第一个
+  if(sessionDataList.length > 0)
+    await handleOpenChatRight(sessionDataList[0].chatSessionId, sessionDataList[0].chatSessionName)
 }
 
 if (sessionDataList.length <= 0)
@@ -135,6 +150,9 @@ if (sessionDataList.length <= 0)
 
 // 退出登录
 async function logout() {
+  // 通知后端移除websocket记录
+  await deleteWebSocketService()
+
   await logoutService()
   removeToken()
   await router.push("/user/login")
@@ -207,20 +225,22 @@ async function sendUpdatePassword() {
 
 // 点击中间会话处理回调
 async function handleOpenChatRight(chatSessionId, chatSessionName) {
-  curChatSessionId.value = chatSessionId
-  curSessionName.value = chatSessionName
-  const messageAll = await getMessageAllService(chatSessionId)
-  messageData.splice(0, messageData.length)
-  for (let i = 0; i < messageAll.data.length; i++) {
-    messageData.push(messageAll.data[i])
-  }
-  // 将该对话置顶
-  for (let i = 0; i < sessionDataList.length; i++) {
-    if (sessionDataList[i].chatSessionId === curChatSessionId.value) {
-      const [targetItem] = sessionDataList.splice(i, 1);
-      curSessionName.value = targetItem.chatSessionName
-      sessionDataList.unshift(targetItem);
-      break;
+  if (chatSessionId !== curChatSessionId.value) {
+    curChatSessionId.value = chatSessionId
+    curSessionName.value = chatSessionName
+    const messageAll = await getMessageAllService(chatSessionId)
+    messageData.splice(0, messageData.length)
+    for (let i = 0; i < messageAll.data.length; i++) {
+      messageData.push(messageAll.data[i])
+    }
+    // 将该对话置顶
+    for (let i = 0; i < sessionDataList.length; i++) {
+      if (sessionDataList[i].chatSessionId === curChatSessionId.value) {
+        const [targetItem] = sessionDataList.splice(i, 1);
+        curSessionName.value = targetItem.chatSessionName
+        sessionDataList.unshift(targetItem);
+        break;
+      }
     }
   }
   rightFlag.value = 1
@@ -275,55 +295,51 @@ async function handleAddChatSession(friendId) {
 }
 
 // websocket连接
-const webSocket = new WebSocket("ws://127.0.0.1:8001/onlineChat")
+const webSocket = new WebSocket("ws://127.0.0.1:8006/message/onlineChat")
 
+// 连接建立成功
 webSocket.onopen = function () {
-  console.log("websocket连接成功")
+  const req = {
+    token: getToken(),
+    messageType: 3
+  }
+  webSocket.send(JSON.stringify(req));
 }
 
 webSocket.onmessage = function (message) {
   const resp = JSON.parse(message.data)
 
-  // 判断当前选中的会话是否为新消息的会话
-  if (curChatSessionId.value === resp.message.chatSessionId) {
-    // 如果是则添加新的消息数据
-    console.log(resp.message)
-    messageData.push(resp.message)
-    // 修改当前选中会话的最后一条消息数据
-    sessionDataList[0].chatSessionLastMessage = resp.message.content.length > 9 ? resp.message.content.substring(0, 9) + "..." : resp.message.content
-  } else {
-    console.log(resp.message)
-    // 找到中间会话列表这一项
+  // 判断消息类型
+  if (resp.messageType === 1) {
+    // 文本类型
+    if (resp.chatSessionId === curChatSessionId.value) {
+      messageData.push(resp)
+      // 改变滑动条标志使滑动条沉底
+      isScrollable.value = !isScrollable.value
+    }
+
+    // 找到中间会话列表中当前的会话
+    // 将其置顶并且修改最近消息
     let index = -1
-    for (let i = 1; i < sessionDataList.length; i++) {
-      if (sessionDataList[i].chatSessionId === resp.message.chatSessionId) {
+    for (let i = 0; i < sessionDataList.length; i++) {
+      if (sessionDataList[i].chatSessionId === resp.chatSessionId) {
         index = i
-        break
+        break;
       }
     }
-    // 如果没找到则创建新的会话
-    if (index === -1) {
-      sessionDataList.push({chatSessionId, chatSessionName, chatSessionLastMessage, chatSessionPhoto})
-      sessionDataList.unshift({
-        chatSessionId: resp.message.chatSessionId,
-        chatSessionName: resp.message.nickname,
-        chatSessionLastMessage: resp.message.content.length > 9 ? resp.message.content.substring(0, 9) + "..." : resp.message.content,
-        chatSessionPhoto: resp.message.photo
-      })
-    }
-    else {
-      // 找到了则修改最后一条数据
-      sessionDataList[index].chatSessionLastMessage = resp.message.content.length > 9 ? resp.message.content.substring(0, 9) + "..." : resp.message.content
+    if (index !== -1) {
+      const [targetItem] = sessionDataList.splice(index, 1);
+      targetItem.chatSessionLastMessage = resp.content.length > 9 ? resp.content.substring(0, 9) + '...' : resp.content
+      sessionDataList.unshift(targetItem);
+    } else {
+      sessionDataList[0].chatSessionLastMessage = resp.content.length > 9 ? resp.content.substring(0, 9) + '...' : resp.content
     }
   }
 }
 
-webSocket.onclose = function (){
-
-}
-
-webSocket.onerror = function (){
-  console.log("连接失败")
+// 发送新的文本消息回调
+async function handleNewTextMessage(message) {
+  webSocket.send(message)
 }
 
 </script>
@@ -381,9 +397,10 @@ webSocket.onerror = function (){
         <mid-friend v-if="midFlag === 2" @openFriendRight="handleOpenFriendRight" ref="midFriendRef"/>
       </div>
       <div class="right">
-        <right-session v-if="rightFlag === 1" :chat-session-id="curChatSessionId"
-                       :chat-session-name="curSessionName" :message-data="messageData"/>
-        <right-friend v-if="rightFlag === 2" :friendData="curFriendData"
+        <right-session v-if="rightFlag === 1" :chat-session-id="curChatSessionId" :is-scrollable="isScrollable"
+                       :chat-session-name="curSessionName" :message-data="messageData"
+                       :chat-session-photo="loginUser.photo" @newTextMessage="handleNewTextMessage"/>
+        <right-friend v-if="rightFlag === 2" :friend-data="curFriendData"
                       @updateRemark="handleUpdateRemark" @deleteFriend="handleDeleteRemark"
                       @addChatSession="handleAddChatSession"/>
       </div>

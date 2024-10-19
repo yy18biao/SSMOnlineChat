@@ -17,5 +17,6 @@ public class MessageDto {
 
     private String messagePhoto;
 
+    // 1 文本消息 2 文件消息 3 用户上线token
     private Integer messageType;
 }

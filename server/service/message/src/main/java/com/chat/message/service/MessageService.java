@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.chat.core.constants.HttpConstants;
 import com.chat.core.domain.BaseEntity;
 import com.chat.core.domain.LoginUserData;
+import com.chat.core.domain.Resp;
 import com.chat.core.enums.ResCode;
 import com.chat.core.utils.ThreadLocalUtil;
 import com.chat.message.domain.Message;
@@ -29,6 +30,9 @@ public class MessageService {
 
     @Resource
     private TokenService tokenService;
+
+    @Resource
+    private OnlineWebsocketService onlineWebsocketService;
 
     @Value("${jwt.secret}")
     private String secret;
@@ -60,5 +64,11 @@ public class MessageService {
         int i = messageMapper.insert(message);
         ThreadLocalUtil.remove();
         return i;
+    }
+
+    public Resp<Void> deleteWebSocket(String token) {
+        LoginUserData loginUserData = getLoginUserData(token);
+        onlineWebsocketService.offline(loginUserData.getUserId());
+        return Resp.ok();
     }
 }

@@ -155,7 +155,7 @@ public class FriendService {
 
         List<FriendApply> friendApplies = friendApplyMapper.selectList(new LambdaQueryWrapper<FriendApply>()
                 .eq(FriendApply::getFriendId, loginUserData.getUserId()));
-        System.out.println(friendApplies);
+
 
         return friendApplies;
     }

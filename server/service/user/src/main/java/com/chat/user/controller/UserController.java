@@ -53,8 +53,8 @@ public class UserController {
     }
 
     @PostMapping("/codeLogin")
-    public Resp<List<String>> codeLogin(@RequestBody UserDto userDto) {
-        return Resp.ok(userService.codeLogin(userDto.getPhone(), userDto.getCode()));
+    public Resp<List<String>> codeLogin(@RequestBody UserDto userDto, HttpServletRequest request) {
+        return Resp.ok(userService.codeLogin(userDto.getPhone(), userDto.getCode() ,request));
     }
 
     @DeleteMapping("/logout")
@@ -76,7 +76,6 @@ public class UserController {
     @PostMapping("/updatePassword")
     public Resp<Void> updatePassword(@RequestBody PasswordUpdateDto passwordUpdateDto,
                                     @RequestHeader(HttpConstants.AUTHENTICATION) String token) {
-        System.out.println(passwordUpdateDto);
         return userService.updatePassword(passwordUpdateDto, token) > 0 ? Resp.ok() : Resp.fail();
     }
 }

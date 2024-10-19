@@ -23,7 +23,6 @@ public class TokenInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         String token = getToken(request);
-        System.out.println(token);
         if (StrUtil.isEmpty(token)) {
             return true;
         }

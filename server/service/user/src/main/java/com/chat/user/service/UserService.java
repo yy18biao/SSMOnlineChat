@@ -184,13 +184,13 @@ public class UserService {
         list.add(user.getUserId().toString());
 
         HttpSession session = request.getSession(true);
-        session.setAttribute("userId", user.getUserId());
+        session.setAttribute("curUserId", user.getUserId());
 
         return list;
     }
 
     // 验证码登录
-    public List<String> codeLogin(String phone, String code) {
+    public List<String> codeLogin(String phone, String code, HttpServletRequest request) {
         // 判断手机号码是否合理
         if (!checkPhone(phone)) {
             throw new ServiceException(ResCode.FAILED_PHONE);
@@ -212,6 +212,9 @@ public class UserService {
                 UserIdentity.ORDINARY.getValue(), user.getNickname(),
                 user.getPhoto()));
         list.add(user.getUserId().toString());
+
+        HttpSession session = request.getSession(true);
+        session.setAttribute("curUserId", user.getUserId());
 
         return list;
     }

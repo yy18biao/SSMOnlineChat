@@ -9,7 +9,7 @@ public class UserVo {
     @JsonSerialize(using = ToStringSerializer.class)
     private Long userId;
 
-    private String nickName;
+    private String nickname;
 
     private String phone;
 

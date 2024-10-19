@@ -1,4 +1,4 @@
-package com.chat.websocket.service;
+package com.chat.message.service;
 
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.WebSocketSession;
@@ -24,6 +24,10 @@ public class OnlineWebsocketService {
         if (existSession == session) {
             sessions.remove((userId));
         }
+    }
+
+    public void offline(Long userId) {
+        sessions.remove((userId));
     }
 
     // 根据 userId 获取到 WebSocketSession

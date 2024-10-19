@@ -65,14 +65,13 @@ public class ChatSessionService {
         if (CollectionUtil.isEmpty(chatSessionIds)) {
             return null;
         }
-        System.out.println(chatSessionIds);
 
         // 获取到所有会话的信息
         List<ChatSession> chatSessionList = chatSessionMapper.selectByChatSessionIds(chatSessionIds);
         if (CollectionUtil.isEmpty(chatSessionList)) {
             return null;
         }
-        System.out.println(chatSessionList);
+
 
         // 获取每个单聊会话的好友头像和昵称
         for (ChatSession chatSession : chatSessionList) {

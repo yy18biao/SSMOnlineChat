@@ -17,7 +17,6 @@
         <module>chatSession</module>
         <module>friend</module>
         <module>message</module>
-        <module>webSocket</module>
     </modules>
 
     <properties>

@@ -28,7 +28,7 @@ export default defineConfig({
     // 代理服务器
     proxy: {
       "/api-dev": {
-        target: "http://127.0.0.1:9999/admin",
+        target: "http://127.0.0.1:9999/",
         rewrite: (p) => p.replace(/^\/api-dev/, ""),
       }
     }

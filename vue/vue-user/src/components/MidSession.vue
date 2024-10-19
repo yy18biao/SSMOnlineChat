@@ -1,8 +1,7 @@
 <script setup>
 
-import {ref, reactive, defineEmits, watch} from "vue";
+import {ref, defineEmits} from "vue";
 import {Search} from "@element-plus/icons-vue";
-import {getChatSessionListService, searchChatSessionService} from "@/apis/chatSession.js";
 
 const searchName = ref('')
 
@@ -25,7 +24,7 @@ const emit = defineEmits(['openChatSessionRight']);
 // 触发点击会话信号处理
 function openChatSessionRight(index) {
   // 如果点击的会话不是当前会话则通知父组件
-  if (props.rightFlag !== 1 || props.sessionDataList[0].chatSessionId !== index.chatSessionId) {
+  if (props.rightFlag !== 1 || props.curSessionId !== index.chatSessionId) {
     emit('openChatSessionRight', index.chatSessionId, index.chatSessionName);
   }
 }

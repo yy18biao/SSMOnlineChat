@@ -18,6 +18,9 @@ public class AdminController {
     @Resource
     private AdminService adminService;
 
+    // TODO 添加管理员
+    // TODO 添加用户
+
     @PostMapping("/login")
     public Resp<String> login(@Validated @RequestBody AdminDto adminDto) {
         return adminService.login(adminDto.getUserId(), adminDto.getPassword());

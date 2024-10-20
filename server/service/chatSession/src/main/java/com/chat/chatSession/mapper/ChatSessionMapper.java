@@ -15,5 +15,5 @@ public interface ChatSessionMapper extends BaseMapper<ChatSession> {
     List<ChatSession> selectByChatSessionIds(@Param("chatSessionIds") LinkedHashSet<Long> chatSessionIds);
 
     @Update("update chatSession set chatSessionLastMessage = #{chatSessionLastMessage} where chatSessionId = #{chatSessionId}")
-    int updateChatSessionLastMessageInt(Long chatSessionId, String chatSessionLastMessage);
+    int updateChatSessionLastMessage(Long chatSessionId, String chatSessionLastMessage);
 }

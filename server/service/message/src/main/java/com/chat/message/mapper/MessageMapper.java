@@ -5,7 +5,6 @@ import com.chat.message.domain.Message;
 import com.chat.message.domain.vo.MessageVo;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
-import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
 

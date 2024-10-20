@@ -15,7 +15,7 @@ const props = defineProps({
   messageData: {
     required: true,
   },
-  chatSessionPhoto: {
+  loginUser: {
     required: true,
   },
   isScrollable: {
@@ -38,16 +38,17 @@ const scrollableDiv = ref(null);
 // 发送文本消息
 async function sendTextMessage() {
   const req = {
+    dtoType: 'addTextMessage',
     chatSessionId: props.chatSessionId,
     token: getToken(),
-    content: inputMessage.value,
-    messageNickname: '',
-    messagePhoto: props.chatSessionPhoto,
+    messageContent: inputMessage.value,
+    messageNickname: props.loginUser.nickname,
+    messagePhoto: props.loginUser.photo,
     messageType: 1,
   }
 
   // 通知父组件发送websocket
-  emit("newTextMessage", JSON.stringify(req))
+  emit("newTextMessage", req)
   inputMessage.value = ''
 }
 

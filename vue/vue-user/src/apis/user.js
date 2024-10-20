@@ -49,3 +49,10 @@ export function updatePasswordCodeService(phone) {
         },
     });
 }
+
+export function deleteWebSocketService() {
+    return service({
+        url: "/websocket/deleteWebSocket",
+        method: "delete",
+    });
+}

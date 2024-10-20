@@ -78,4 +78,6 @@ public class UserController {
                                     @RequestHeader(HttpConstants.AUTHENTICATION) String token) {
         return userService.updatePassword(passwordUpdateDto, token) > 0 ? Resp.ok() : Resp.fail();
     }
+
+
 }

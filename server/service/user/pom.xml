@@ -38,6 +38,11 @@
             <artifactId>common-sms</artifactId>
             <version>${common-sms.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.chat</groupId>
+            <artifactId>common-rabbit</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 
 </project>

@@ -10,9 +10,3 @@ export function getMessageAllService(chatSessionId) {
     });
 }
 
-export function deleteWebSocketService() {
-    return service({
-        url: "/message/deleteWebSocket",
-        method: "delete",
-    });
-}

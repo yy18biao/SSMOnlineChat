@@ -28,10 +28,12 @@ public enum ResCode {
 
     OLD_PASSWORD_NO_PASSWORD(3400, "当前密码错误"),
 
-    FRIEND_WEBSOCKETREQ(3500, "反序列化消息请求失败"),
+    FRIEND_WEBSOCKETREQ(3500, "反序列化websocket消息请求失败"),
     FRIEND_MESSAGE_MYSQL(3501, "消息存储数据库失败"),
     FRIEND_UPDATE_CHATSESSION(3502, "修改会话失败"),
-    FRIEND_SEND_MESSAGE(3504, "转发消息失败");
+    FRIEND_SEND_MESSAGE(3504, "转发消息失败"),
+
+    FAILED_RABBIT_PRODUCE(3600, "rabbit发布消息失败");
 
     private int code;
     private String msg;

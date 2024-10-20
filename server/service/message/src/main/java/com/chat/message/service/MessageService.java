@@ -1,17 +1,9 @@
 package com.chat.message.service;
 
-import cn.hutool.core.bean.BeanUtil;
-import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.StrUtil;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.chat.core.constants.HttpConstants;
-import com.chat.core.domain.BaseEntity;
 import com.chat.core.domain.LoginUserData;
-import com.chat.core.domain.Resp;
 import com.chat.core.enums.ResCode;
-import com.chat.core.utils.ThreadLocalUtil;
-import com.chat.message.domain.Message;
-import com.chat.message.domain.dto.MessageDto;
 import com.chat.message.domain.vo.MessageVo;
 import com.chat.message.mapper.MessageMapper;
 import com.chat.security.exception.ServiceException;
@@ -20,7 +12,6 @@ import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -30,9 +21,6 @@ public class MessageService {
 
     @Resource
     private TokenService tokenService;
-
-    @Resource
-    private OnlineWebsocketService onlineWebsocketService;
 
     @Value("${jwt.secret}")
     private String secret;
@@ -54,21 +42,5 @@ public class MessageService {
 
     public List<MessageVo> getAll(Long chatSessionId){
         return messageMapper.selectMessageByChatId(chatSessionId);
-    }
-
-    public int addMessage(MessageDto messageDto, String token) {
-        LoginUserData loginUserData = getLoginUserData(token);
-        ThreadLocalUtil.set("curUserId", loginUserData.getUserId());
-
-        Message message = BeanUtil.toBean(messageDto, Message.class);
-        int i = messageMapper.insert(message);
-        ThreadLocalUtil.remove();
-        return i;
-    }
-
-    public Resp<Void> deleteWebSocket(String token) {
-        LoginUserData loginUserData = getLoginUserData(token);
-        onlineWebsocketService.offline(loginUserData.getUserId());
-        return Resp.ok();
     }
 }

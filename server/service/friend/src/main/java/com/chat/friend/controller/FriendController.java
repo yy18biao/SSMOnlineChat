@@ -49,12 +49,6 @@ public class FriendController {
         return Resp.ok(friendService.searchUser(searchName));
     }
 
-    // 添加好友
-    @PostMapping("/addFriend")
-    public Resp<Void> addFriend(@RequestParam Long friendId, @RequestHeader(HttpConstants.AUTHENTICATION) String token) {
-        return friendService.addFriend(friendId, token) > 0 ? Resp.ok() : Resp.fail();
-    }
-
     // 查看好友申请列表
     @GetMapping("/friendApplyList")
     public Resp<List<FriendApply>> friendApplyList(@RequestHeader(HttpConstants.AUTHENTICATION) String token) {

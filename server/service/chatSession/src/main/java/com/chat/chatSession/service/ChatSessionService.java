@@ -109,6 +109,7 @@ public class ChatSessionService {
         // 获取好友所在的所有会话
         List<Long> chatSessionIds2 = chatSessionUserMapper.selectAll(friendId);
         if (CollectionUtil.isNotEmpty(chatSessionIds) && CollectionUtil.isNotEmpty(chatSessionIds2)) {
+            // 判断是否已经存在会话， 如果有直接返回会话id
             for (Long chatSessionId : chatSessionIds) {
                 if (chatSessionIds2.contains(chatSessionId)) {
                     return chatSessionId.toString();

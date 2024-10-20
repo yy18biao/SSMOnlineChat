@@ -44,11 +44,4 @@ public class ChatSessionController {
     public Resp<List<Long>> selectAllUserId(Long chatSessionId) {
         return Resp.ok(chatSessionService.selectAllUserId(chatSessionId));
     }
-
-    // 修改会话的最新消息
-    @GetMapping("/updateChatSessionLastMessage")
-    public Resp<Void> updateChatSessionLastMessage(UpdateMessageDto updateMessageDto) {
-        return chatSessionMapper.updateChatSessionLastMessageInt(updateMessageDto.getChatSessionId(), updateMessageDto.getMessage())
-                > 0 ? Resp.ok() : Resp.fail();
-    }
 }

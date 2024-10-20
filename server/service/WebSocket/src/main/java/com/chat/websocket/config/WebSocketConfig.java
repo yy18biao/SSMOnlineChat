@@ -1,6 +1,6 @@
-package com.chat.message.config;
+package com.chat.websocket.config;
 
-import com.chat.message.api.WebSocketApi;
+import com.chat.websocket.api.WebSocketApi;
 import jakarta.annotation.Resource;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
@@ -17,7 +17,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         // 绑定websocket请求类和连接uri
-        registry.addHandler(webSocketApi, "/message/onlineChat")
+        registry.addHandler(webSocketApi, "/onlineChat")
                 // 该拦截器将http协议中保存的会话添加到websocket协议中
                 .addInterceptors(new HttpSessionHandshakeInterceptor())
                 .setAllowedOrigins("*");

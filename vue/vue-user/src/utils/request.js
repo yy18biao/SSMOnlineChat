@@ -1,7 +1,6 @@
 import axios from "axios"
 import { getToken, removeToken} from "./cookie";
 import router from "@/router";
-import {ElMessage} from "element-plus";
 
 // 设置请求的格式
 axios.defaults.headers["Content-Type"] = "application/json;charset=utf-8";
@@ -34,13 +33,13 @@ service.interceptors.response.use(
 
         if (code === 3000) {
             // 鉴权失败
-            ElMessage.error(msg);
+            ElMessage.error(msg)
             removeToken() // 删除token
             router.push('/user/login') // 路由回登录界面
             return Promise.reject(new Error(msg));
         } else if (code !== 200) {
             // 操作失败
-            ElMessage.error(msg);
+            ElMessage.error(msg)
             return Promise.reject(new Error(msg));
         } else {
             return Promise.resolve(res.data);

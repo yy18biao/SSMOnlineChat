@@ -11,12 +11,14 @@ import {
   logoutService, updatePasswordCodeService,
   updatePasswordService,
   updatePhoneCodeService,
-  updateUserService
+  updateUserService,
+  deleteWebSocketService
 } from "@/apis/user.js";
 import {getToken, removeToken} from "@/utils/cookie.js";
 import router from "@/router/index.js";
 import {addChatSessionListService, getChatSessionListService, searchChatSessionService} from "@/apis/chatSession.js";
-import {deleteWebSocketService, getMessageAllService} from "@/apis/message.js";
+import {getMessageAllService} from "@/apis/message.js";
+import {ElMessage} from "element-plus";
 
 let txt = ref('获取验证码')
 let timer = null
@@ -141,7 +143,7 @@ async function getChatSessionList() {
   }
 
   // 触发一次右侧会话消息显示列表第一个
-  if(sessionDataList.length > 0)
+  if (sessionDataList.length > 0)
     await handleOpenChatRight(sessionDataList[0].chatSessionId, sessionDataList[0].chatSessionName)
 }
 
@@ -162,14 +164,14 @@ async function logout() {
 async function updateUser() {
   await updateUserService(updateUserData)
   aToB(loginUser, updateUserData);
-  alert("修改成功")
+  ElMessage.success("修改成功")
   updateUserData.code = ''
 }
 
 // 获取修改手机验证码
 async function updatePhoneCode() {
   if (updateUserData.phone === loginUser.phone) {
-    return alert("请输入新的手机号码")
+    return ElMessage.error("请输入新的手机号码")
   }
   await updatePhoneCodeService(updateUserData.phone)
   txt.value = '59s'
@@ -188,22 +190,22 @@ async function updatePhoneCode() {
 // 修改密码
 async function updatePassword() {
   if (updatePasswordData.oldPassword === '') {
-    return alert("请输入当前密码")
+    return ElMessage.error("请输入当前密码")
   }
   if (updatePasswordData.newPassword === '') {
-    return alert("请输入修改密码")
+    return ElMessage.error("请输入修改密码")
   }
   if (updatePasswordData.confirmPassword === '') {
-    return alert("请再次确认密码")
+    return ElMessage.error("请再次确认密码")
   }
   if (updatePasswordData.newPassword !== updatePasswordData.confirmPassword) {
-    return alert("两次密码不一致")
+    return ElMessage.error("两次密码不一致")
   }
   if (updatePasswordData.code === '') {
-    return alert("请输入验证码")
+    return ElMessage.error("请输入验证码")
   }
   await updatePasswordService(updatePasswordData)
-  alert("修改成功")
+  ElMessage.success("修改成功")
   updatePasswordData = {}
 }
 
@@ -295,25 +297,36 @@ async function handleAddChatSession(friendId) {
 }
 
 // websocket连接
-const webSocket = new WebSocket("ws://127.0.0.1:8006/message/onlineChat")
+const webSocket = new WebSocket("ws://127.0.0.1:8001/onlineChat")
 
 // 连接建立成功
 webSocket.onopen = function () {
   const req = {
     token: getToken(),
-    messageType: 3
+    dtoType: 'userOnline'
   }
   webSocket.send(JSON.stringify(req));
+  console.log("连接成功")
 }
 
 webSocket.onmessage = function (message) {
   const resp = JSON.parse(message.data)
+  console.log(resp)
 
   // 判断消息类型
-  if (resp.messageType === 1) {
+  if (resp.respType === 'addTextMessage') {
     // 文本类型
     if (resp.chatSessionId === curChatSessionId.value) {
-      messageData.push(resp)
+      messageData.push({
+        photo: resp.messagePhoto,
+        content: resp.messageContent,
+        nickname: resp.messageNickname,
+        userId: resp.userId,
+        createTime: resp.createTime,
+      })
+
+      console.log(messageData);
+
       // 改变滑动条标志使滑动条沉底
       isScrollable.value = !isScrollable.value
     }
@@ -329,17 +342,29 @@ webSocket.onmessage = function (message) {
     }
     if (index !== -1) {
       const [targetItem] = sessionDataList.splice(index, 1);
-      targetItem.chatSessionLastMessage = resp.content.length > 9 ? resp.content.substring(0, 9) + '...' : resp.content
+      targetItem.chatSessionLastMessage = resp.messageContent.length > 9 ? resp.messageContent.substring(0, 9) + '...' : resp.messageContent
       sessionDataList.unshift(targetItem);
     } else {
-      sessionDataList[0].chatSessionLastMessage = resp.content.length > 9 ? resp.content.substring(0, 9) + '...' : resp.content
+      sessionDataList[0].chatSessionLastMessage = resp.messageContent.length > 9 ? resp.messageContent.substring(0, 9) + '...' : resp.messageContent
     }
+  } else if (resp.respType === 'addFriendApply') {
+    ElMessage({
+      showClose: true,
+      message: resp.msg,
+      type: 'success',
+    })
+  } else if (resp.respType === 'addFriendApplyError') {
+    ElMessage({
+      showClose: true,
+      message: resp.msg,
+      type: 'error',
+    })
   }
 }
 
-// 发送新的文本消息回调
-async function handleNewTextMessage(message) {
-  webSocket.send(message)
+// 发送websocket请求
+async function handleSendWebSocket(req) {
+  webSocket.send(req)
 }
 
 </script>
@@ -394,12 +419,13 @@ async function handleNewTextMessage(message) {
         <mid-session v-if="midFlag === 1" @openChatSessionRight="handleOpenChatRight"
                      :chat-session-id="curChatSessionId" :session-data-list="sessionDataList"
                      :right-flag="rightFlag"/>
-        <mid-friend v-if="midFlag === 2" @openFriendRight="handleOpenFriendRight" ref="midFriendRef"/>
+        <mid-friend v-if="midFlag === 2" @openFriendRight="handleOpenFriendRight" ref="midFriendRef"
+                    @addFriend="handleSendWebSocket"/>
       </div>
       <div class="right">
         <right-session v-if="rightFlag === 1" :chat-session-id="curChatSessionId" :is-scrollable="isScrollable"
                        :chat-session-name="curSessionName" :message-data="messageData"
-                       :chat-session-photo="loginUser.photo" @newTextMessage="handleNewTextMessage"/>
+                       :login-user="loginUser" @newTextMessage="handleSendWebSocket"/>
         <right-friend v-if="rightFlag === 2" :friend-data="curFriendData"
                       @updateRemark="handleUpdateRemark" @deleteFriend="handleDeleteRemark"
                       @addChatSession="handleAddChatSession"/>

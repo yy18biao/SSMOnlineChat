@@ -18,6 +18,7 @@
         <module>common-security</module>
         <module>common-sms</module>
         <module>common-rabbit</module>
+        <module>common-websocket</module>
     </modules>
 
     <properties>

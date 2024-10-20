@@ -101,54 +101,6 @@ public class FriendService {
         return userMapper.searchUser(searchName);
     }
 
-    public int addFriend(Long friendId, String token) {
-        // 获取用户信息
-        LoginUserData loginUserData = getLoginUserData(token);
-
-        if (friendId.equals(loginUserData.getUserId())) {
-            throw new ServiceException(ResCode.FRIEND_NO_ME);
-        }
-
-        // 判断两人是否已经是好友
-        if (friendMapper.selectCount(new LambdaQueryWrapper<Friend>()
-                .eq(Friend::getFriendId, friendId)
-                .eq(Friend::getUserId, loginUserData.getUserId())) > 0) {
-            throw new ServiceException(ResCode.FRIEND_YES);
-        }
-
-        // 判断是否已经有过申请了
-        if(friendApplyMapper.selectCount(new LambdaQueryWrapper<FriendApply>()
-                .eq(FriendApply::getUserId, loginUserData.getUserId())
-                .eq(FriendApply::getFriendId, friendId)) > 0) {
-            throw new ServiceException(ResCode.APPLYED);
-        }
-
-        // 判断对方是否向你发起了申请
-        if(friendApplyMapper.selectCount(new LambdaQueryWrapper<FriendApply>()
-                .eq(FriendApply::getUserId, friendId)
-                .eq(FriendApply::getFriendId, loginUserData.getUserId())) > 0) {
-            throw new ServiceException(ResCode.FRIEND_APPLYED);
-        }
-
-        // 查询该用户的信息
-        if (userMapper.selectCount(new LambdaQueryWrapper<User>()
-                .eq(User::getUserId, friendId)) < 0) {
-            throw new ServiceException(ResCode.USER_NOT_EXISTS);
-        }
-
-        FriendApply apply = new FriendApply();
-        apply.setUserId(loginUserData.getUserId());
-        apply.setFriendId(friendId);
-        apply.setNickname(loginUserData.getNickname());
-        apply.setPhoto(loginUserData.getPhoto());
-
-        ThreadLocalUtil.set("curUserId", loginUserData.getUserId());
-        int i = friendApplyMapper.insert(apply);
-        ThreadLocalUtil.remove();
-
-        return i;
-    }
-
     public List<FriendApply> friendApplyList(String token) {
         // 获取用户信息
         LoginUserData loginUserData = getLoginUserData(token);

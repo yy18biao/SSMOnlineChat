@@ -8,14 +8,16 @@ import {
   friendApplyListService,
   agreeFriendApplyService, refuseFriendApplyService
 } from "@/apis/friend.js";
+import {getToken, getUserId} from "@/utils/cookie.js";
+import {ElMessage} from "element-plus";
 
 // 是否开启好友搜索弹窗标志
 const friendDialogFlag = ref(false);
 // 是否开启好友申请列表弹窗标志
 const applyDialogFlag = ref(false);
 
-// 点击会话信号
-const emit = defineEmits(['openFriendRight'])
+// 信号
+const emit = defineEmits(['openFriendRight', 'addFriend'])
 
 // 触发点击会话信号处理
 async function openFriendRight(friendData) {
@@ -75,8 +77,19 @@ async function searchUser(searchName) {
 
 // 添加好友
 async function addFriend(friendId) {
-  await addFriendService(friendId);
-  alert("申请已发送")
+  if(friendId === getUserId()) {
+    ElMessage.error("不可添加自己")
+    return;
+  }
+
+  let req = {
+    dtoType: 'addFriendApply',
+    friendId: friendId,
+    token: getToken()
+  }
+
+  // 通知父组件
+  emit("addFriend", JSON.stringify(req));
 }
 
 // 查看好友申请列表

@@ -33,7 +33,9 @@ public enum ResCode {
     FRIEND_UPDATE_CHATSESSION(3502, "修改会话失败"),
     FRIEND_SEND_MESSAGE(3504, "转发消息失败"),
 
-    FAILED_RABBIT_PRODUCE(3600, "rabbit发布消息失败");
+    FAILED_RABBIT_PRODUCE(3600, "rabbit发布消息失败"),
+
+    FAILED_FILE_UPLOAD(3700, "上传文件失败");
 
     private int code;
     private String msg;

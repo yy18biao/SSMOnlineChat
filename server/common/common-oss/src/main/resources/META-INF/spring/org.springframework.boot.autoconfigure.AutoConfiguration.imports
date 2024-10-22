@@ -1,0 +1,3 @@
+com.chat.oss.service.OSSService
+com.chat.oss.config.OSSProperties
+com.chat.oss.config.OSSConfig

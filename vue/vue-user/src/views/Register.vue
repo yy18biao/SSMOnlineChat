@@ -4,6 +4,7 @@
       <!-- logo层 -->
       <div class="logo">chatOJ</div>
 
+      <el-button @click="router.push('/user/login')">返回</el-button>
       <el-input v-model="mobileForm.phone" type="text" placeholder="请输入手机号"/>
       <el-input v-model="mobileForm.code" type="text" placeholder="请输入验证码"/>
       <el-input v-model="mobileForm.password" type="password" placeholder="请输入密码"/>

@@ -75,7 +75,7 @@ public class ConsumeService {
                 rabbitMessageVo.setChatSessionId(rabbitMessageDto.getChatSessionId());
                 rabbitMessageVo.setMessageNickname(loginUserData.getNickname());
                 rabbitMessageVo.setMessagePhoto(loginUserData.getPhoto());
-                rabbitMessageVo.setCreateTime(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss")));
+                rabbitMessageVo.setCreateTime(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
                 productService.send(rabbitMessageVo);
             }
         }

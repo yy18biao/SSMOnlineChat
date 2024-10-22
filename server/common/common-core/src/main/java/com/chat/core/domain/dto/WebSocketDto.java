@@ -19,4 +19,6 @@ public class WebSocketDto {
     private String messageNickname;// 如果是新增消息的消息发送者的昵称
     private String messagePhoto;// 如果是新增消息的消息发送者的头像
     private Integer messageType; // 如果是新增消息的消息类型 1 文本 2 文件
+
+    private String fileName;
 }

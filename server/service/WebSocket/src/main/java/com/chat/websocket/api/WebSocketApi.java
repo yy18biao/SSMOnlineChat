@@ -4,10 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
 import com.chat.core.constants.HttpConstants;
 import com.chat.core.domain.LoginUserData;
-import com.chat.core.domain.dto.RabbitChatSessionDto;
-import com.chat.core.domain.dto.RabbitFriendDto;
-import com.chat.core.domain.dto.RabbitMessageDto;
-import com.chat.core.domain.dto.WebSocketDto;
+import com.chat.core.domain.dto.*;
 import com.chat.core.domain.vo.RabbitFriendApplyVo;
 import com.chat.core.enums.ResCode;
 import com.chat.redis.service.RedisService;
@@ -16,6 +13,7 @@ import com.chat.security.service.TokenService;
 import com.chat.websocket.rabbit.producer.RabbitChatSessionProducer;
 import com.chat.websocket.rabbit.producer.RabbitFriendProducer;
 import com.chat.websocket.rabbit.producer.RabbitMessageProducer;
+import com.chat.websocket.rabbit.producer.RabbitUserProducer;
 import com.chat.websocket.service.OnlineWebsocketService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Resource;
@@ -44,6 +42,9 @@ public class WebSocketApi extends TextWebSocketHandler {
 
     @Resource
     private RabbitFriendProducer rabbitFriendProducer;
+
+    @Resource
+    private RabbitUserProducer rabbitUserProducer;
 
     @Resource
     private TokenService tokenService;
@@ -77,7 +78,6 @@ public class WebSocketApi extends TextWebSocketHandler {
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws IOException {
         // 反序列化收到的消息请求
         WebSocketDto webSocketDto = objectMapper.readValue(message.getPayload(), WebSocketDto.class);
-        System.out.println(webSocketDto);
 
         // 判断消息类型
         if (webSocketDto.getDtoType().equals("userOnline")) {
@@ -99,20 +99,20 @@ public class WebSocketApi extends TextWebSocketHandler {
             rabbitChatSessionDto.setLastMessageContent(webSocketDto.getMessageContent());
             rabbitChatSessionDto.setDtoType("updateLastMessageContent");
             rabbitChatSessionProducer.send(rabbitChatSessionDto);
-        } else if(webSocketDto.getDtoType().equals("addFriendApply")){
+        } else if (webSocketDto.getDtoType().equals("addFriendApply")) {
             // 新增好友申请
 
             // 获取当前用户登录信息
             LoginUserData loginUserData = getLoginUserData(webSocketDto.getToken());
 
             // 判断是否已经存在两个人的申请
-            if(redisService.get("addFriendApply" + loginUserData.getUserId().toString(), Long.class) != null &&
+            if (redisService.get("addFriendApply" + loginUserData.getUserId().toString(), Long.class) != null &&
                     redisService.get("addFriendApply" + loginUserData.getUserId().toString(), Long.class).equals(webSocketDto.getFriendId())) {
                 session.sendMessage(new TextMessage(objectMapper.writeValueAsString(
                         new RabbitFriendApplyVo("已向该用户发起申请 等待对方处理", "addFriendApplyError"))));
                 return;
-            } else if(redisService.get("addFriendApply" + webSocketDto.getFriendId().toString(), Long.class) != null &&
-                    redisService.get("addFriendApply" + webSocketDto.getFriendId().toString(), Long.class).equals(loginUserData.getUserId())){
+            } else if (redisService.get("addFriendApply" + webSocketDto.getFriendId().toString(), Long.class) != null &&
+                    redisService.get("addFriendApply" + webSocketDto.getFriendId().toString(), Long.class).equals(loginUserData.getUserId())) {
                 session.sendMessage(new TextMessage(objectMapper.writeValueAsString(
                         new RabbitFriendApplyVo("该用户已向您发起申请 请处理", "addFriendApplyError"))));
                 return;
@@ -126,6 +126,12 @@ public class WebSocketApi extends TextWebSocketHandler {
             friendDto.setFriendId(webSocketDto.getFriendId());
             friendDto.setFriendPhoto(loginUserData.getPhoto());
             rabbitFriendProducer.send(friendDto);
+        } else if (webSocketDto.getDtoType().equals("updateHead")) {
+            // 修改头像
+            // 发布rabbit通知用户模块修改头像数据
+            RabbitUserDto rabbitUserDto = BeanUtil.copyProperties(webSocketDto, RabbitUserDto.class);
+            rabbitUserDto.setPhoto(webSocketDto.getFileName());
+            rabbitUserProducer.send(rabbitUserDto);
         }
     }
 

@@ -156,6 +156,7 @@ public class UserService {
 
         User user = BeanUtil.copyProperties(userAddDto, User.class);
         user.setPassword(BCryptUtils.encrypt(user.getPassword()));
+        user.setNickname(user.getPhone());
 
         redisService.delete(RedisConstants.REG_PHONE_CODE_KEY + userAddDto.getPhone());
         return userMapper.insert(user);

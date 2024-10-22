@@ -45,6 +45,8 @@ public class ConsumeService {
 
     @Value("${jwt.secret}")
     private String secret;
+    @Autowired
+    private RedisService redisService;
 
 
     private LoginUserData getLoginUserData(String token) {
@@ -83,7 +85,6 @@ public class ConsumeService {
                 friendApply.setPhoto(rabbitFriendDto.getFriendPhoto());
                 friendApply.setNickname(rabbitFriendDto.getFriendName());
 
-                System.out.println(friendApply);
                 if (friendApplyMapper.insert(friendApply) < 1) {
                     rabbitFriendApplyVo.setMsg(ResCode.ERROR.getMsg());
                     rabbitFriendApplyVo.setRespType("addFriendApplyError");
@@ -91,6 +92,7 @@ public class ConsumeService {
                     // 插入成功
                     rabbitFriendApplyVo.setMsg(rabbitFriendDto.getFriendName() + " 向您发起了好友申请");
                     rabbitFriendApplyVo.setRespType("addFriendApply");
+                    redisService.delete("addFriendApply" + rabbitFriendDto.getFriendId());
                 }
             }
 

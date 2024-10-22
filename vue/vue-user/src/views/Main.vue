@@ -58,11 +58,12 @@ const isScrollable = ref(true)
 async function openMidSession() {
   midFlag.value = 1
   rightFlag.value = 0
+  sessionDataList.splice(0, sessionDataList.length)
+  await getChatSessionList()
 }
 
 // 开启中间好友列表
 async function openMidFriend() {
-
   midFlag.value = 2
   rightFlag.value = 0
 }
@@ -315,7 +316,7 @@ webSocket.onmessage = function (message) {
 
   // 判断消息类型
   if (resp.respType === 'addTextMessage') {
-    // 文本类型
+    // 新增文本类型
     if (resp.chatSessionId === curChatSessionId.value) {
       messageData.push({
         photo: resp.messagePhoto,
@@ -348,23 +349,51 @@ webSocket.onmessage = function (message) {
       sessionDataList[0].chatSessionLastMessage = resp.messageContent.length > 9 ? resp.messageContent.substring(0, 9) + '...' : resp.messageContent
     }
   } else if (resp.respType === 'addFriendApply') {
+    // 新增好友申请
     ElMessage({
       showClose: true,
       message: resp.msg,
       type: 'success',
     })
   } else if (resp.respType === 'addFriendApplyError') {
+    // 新增好友申请错误
     ElMessage({
       showClose: true,
       message: resp.msg,
       type: 'error',
     })
+  } else if (resp.respType === 'updateHead') {
+    // 修改头像
+    if (resp.photo !== null || resp.photo !== '') {
+      loginUser.photo = resp.photo
+    }
+    console.log(loginUser);
   }
 }
 
 // 发送websocket请求
 async function handleSendWebSocket(req) {
   webSocket.send(req)
+}
+
+/* 文件 */
+const headers = ref({
+  Authorization: "Bearer " + getToken(),
+})
+
+// 上传文件成功
+const handleUploadSuccess = async (resp, file, fileList) => {
+  const req = {
+    fileName: resp.fileName,
+    dtoType: 'updateHead',
+    token: getToken()
+  }
+  // 通知后端修改用户数据
+  webSocket.send(JSON.stringify(req))
+}
+
+const handleUploadError = () => {
+  ElMessage({message: '图片上传失败', type: "error"});
 }
 
 </script>
@@ -391,7 +420,8 @@ async function handleSendWebSocket(req) {
         <el-menu class="el-menu">
           <el-menu-item>
             <!--            TODO 头像上传-->
-            <el-upload action="" :show-file-list="false">
+            <el-upload action="/api-dev/file/uploadFile" :show-file-list="false"
+                       :headers="headers" :on-success="handleUploadSuccess" :on-error="handleUploadError">
               <img class="photo" v-if="loginUser.photo" :src="loginUser.photo"/>
               <el-icon v-else>
                 <Plus/>

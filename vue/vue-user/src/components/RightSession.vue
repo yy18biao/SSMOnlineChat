@@ -48,7 +48,7 @@ async function sendTextMessage() {
   }
 
   // 通知父组件发送websocket
-  emit("newTextMessage", req)
+  emit("newTextMessage", JSON.stringify(req));
   inputMessage.value = ''
 }
 

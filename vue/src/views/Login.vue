@@ -12,11 +12,12 @@
 
       <!-- 密码登录层 默认 -->
       <div class="pass-input" >
-        <el-input v-model="mobileForm.phone" type="text" placeholder="请输入手机号码"/>
-        <el-input v-model="mobileForm.password" type="password" placeholder="请输入密码"/>
+        <el-input v-model="mobileForm.phone" type="text" id="login-phone" placeholder="请输入手机号码"/>
+        <el-input v-model="mobileForm.password" type="password" id="login-pass" placeholder="请输入密码"/>
         <el-button type="primary" class="forgetPass" @click="">忘记密码?</el-button>
         <el-button type="primary" class="login-button" @click="loginPass">登录</el-button>
         <el-button type="primary" class="reg-button" @click="reg">注册账户</el-button>
+        <el-button type="primary" class="reg-button" @click="router.push('/admin/login')">转至管理员登陆</el-button>
       </div>
 
       <!-- 验证码登录层 -->
@@ -28,6 +29,7 @@
         </div>
         <el-button type="primary" class="login-button" @click="loginPhone">登录</el-button>
         <el-button type="primary" class="reg-button" @click="reg">注册账户</el-button>
+        <el-button type="primary" class="reg-button" @click="router.push('/admin/login')">转至管理员登陆</el-button>
       </div>
 
       <!-- 尾段功能层 -->

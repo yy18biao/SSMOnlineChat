@@ -10,8 +10,13 @@ const router = createRouter({
             component: () => import("@/views/Login.vue"),
         },
         {
+            path: "/admin/login",
+            name: "adminLogin",
+            component: () => import("@/views/Admin-Login.vue"),
+        },
+        {
             path: "/",
-            redirect: "/user/login"
+            redirect: "/user/main"
         },
         {
             path: "/user/register",
@@ -22,7 +27,24 @@ const router = createRouter({
             path: "/user/main",
             name: "main",
             component: () => import("@/views/Main.vue"),
-        }
+        },
+        {
+            path: "/admin/layout",
+            name: "layout",
+            component: () => import("@/views/Admin-Layout.vue"),
+            children: [
+                {
+                    path: "/admin/user",
+                    name: "adminUser",
+                    component: () => import("@/views/Admin-User.vue"),
+                },
+                {
+                    path: "/admin/apply",
+                    name: "adminApply",
+                    component: () => import("@/views/Admin-Apply.vue"),
+                },
+            ]
+        },
     ]
 })
 
@@ -30,7 +52,7 @@ export default router
 
 // 路由前置守卫
 router.beforeEach((to, from, next) => {
-    if (to.path === '/user/register')
+    if (to.path === '/user/register' || to.path === '/admin/login') {}
         return next()
     if (getToken()) {
         // 已经登录并且token没有过期则不需要到登录界面

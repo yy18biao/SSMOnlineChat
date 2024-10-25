@@ -20,10 +20,21 @@
     <el-table-column prop="phone" width="150px" label="手机号"/>
     <el-table-column prop="email" width="300px" label="邮箱"/>
     <el-table-column prop="introduce" width="600px" label="个人介绍"/>
-    <el-table-column label="操作" width="100px" fixed="right">
+    <el-table-column prop="status" width="90px" label="用户状态">
       <template #default="{ row }">
-        <el-button type="text" plain @click="onUpdateUserStatus(row.userId, 2)">同意</el-button>
-        <el-button class="red" type="text" plain @click="onUpdateUserStatus(row.userId, 1)">拒绝</el-button>
+        <el-tag type="success" v-if="row.status == 1">正常</el-tag>
+        <el-tag type="" v-if="row.status == 0">申请冻结</el-tag>
+        <el-tag type="error" v-if="row.status == 2">冻结</el-tag>
+      </template>
+    </el-table-column>
+    <el-table-column label="操作" width="80px" fixed="right">
+      <template #default="{ row }">
+        <el-button class="red" v-if="row.status === 1" type="text" plain
+                   @click="onUpdateUserStatus(row.userId, 2)">冻结
+        </el-button>
+        <el-button v-if="row.status === 2" type="text" plain
+                   @click="onUpdateUserStatus(row.userId, 1)">解冻
+        </el-button>
       </template>
     </el-table-column>
   </el-table>
@@ -34,9 +45,10 @@
                  @size-change="handleSizeChange" @current-change="handleCurrentChange"/>
 </template>
 
+
 <script setup>
 import {reactive, ref} from 'vue';
-import {getApplyListService, updateStatusService} from '@/apis/user'
+import {getUserListService, updateStatusService} from '@/apis/admin'
 
 const params = reactive({
   pageNum: 1,
@@ -48,12 +60,12 @@ const params = reactive({
 const userList = ref([])
 const total = ref(0)
 
-async function getApplyList() {
-  const ref = await getApplyListService(params)
+async function getUserList() {
+  const ref = await getUserListService(params)
   userList.value = ref.rows
   total.value = ref.total
 }
-getApplyList()
+getUserList()
 
 function onSearch() {
   params.pageNum = 1
@@ -86,6 +98,6 @@ async function onUpdateUserStatus(userId, status) {
   updateStatusParams.userId = userId
   updateStatusParams.status = status
   await updateStatusService(updateStatusParams)
-  getApplyList()
+  getUserList()
 }
 </script>

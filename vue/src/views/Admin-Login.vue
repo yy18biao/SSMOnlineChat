@@ -2,6 +2,7 @@
 
   <div class="login-main">
     <div class="login-box" v-loading="loading">
+      <el-button text @click="router.push('/user/login')">返回</el-button>
       <div class="logo-box">OnlineChat后台管理</div>
       <div class="form-box">
         <div class="form-item">

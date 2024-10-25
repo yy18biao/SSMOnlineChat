@@ -64,6 +64,7 @@ public class ConsumeService {
         return loginUserData;
     }
 
+    // TODO 好友同意/拒绝
     @RabbitListener(queues = "friend")
     public void consume(RabbitFriendDto rabbitFriendDto) {
         LoginUserData loginUserData = getLoginUserData(rabbitFriendDto.getToken());
@@ -92,7 +93,6 @@ public class ConsumeService {
                     // 插入成功
                     rabbitFriendApplyVo.setMsg(rabbitFriendDto.getFriendName() + " 向您发起了好友申请");
                     rabbitFriendApplyVo.setRespType("addFriendApply");
-                    redisService.delete("addFriendApply" + rabbitFriendDto.getFriendId());
                 }
             }
 

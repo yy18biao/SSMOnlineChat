@@ -89,7 +89,6 @@ const loginUser = reactive({
 // 用于修改个人信息
 const updateUserData = reactive({
   nickname: '',
-  photo: '',
   email: '',
   introduce: '',
   phone: '',
@@ -106,18 +105,21 @@ let updatePasswordData = reactive({
 
 // 赋值
 function aToB(A, B) {
-  A.nickname = B.nickname;
-  A.photo = B.photo;
-  A.email = B.email;
-  A.introduce = B.introduce;
-  A.phone = B.phone;
+
 }
 
 // 获取个人信息
 async function getUser() {
   const user = await getUserService();
-  aToB(loginUser, user.data);
-  aToB(updateUserData, loginUser);
+  loginUser.nickname = user.data.nickname;
+  loginUser.photo = user.data.photo;
+  loginUser.email = user.data.email;
+  loginUser.introduce = user.data.introduce;
+  loginUser.phone = user.data.phone;
+  updateUserData.nickname = loginUser.nickname;
+  updateUserData.email = loginUser.email;
+  updateUserData.introduce = loginUser.introduce;
+  updateUserData.phone = loginUser.phone;
 }
 
 getUser()
@@ -164,7 +166,10 @@ async function logout() {
 // 修改个人信息
 async function updateUser() {
   await updateUserService(updateUserData)
-  aToB(loginUser, updateUserData);
+  loginUser.nickname = updateUserData.nickname;
+  loginUser.email = updateUserData.email;
+  loginUser.introduce = updateUserData.introduce;
+  loginUser.phone = updateUserData.phone;
   ElMessage.success("修改成功")
   updateUserData.code = ''
 }

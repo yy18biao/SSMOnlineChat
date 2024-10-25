@@ -258,14 +258,11 @@ public class UserService {
             }
 
             redisService.delete(RedisConstants.UPDATE_PHONE_CODE_KEY + userUpdateDto.getPhone());
-            user.setPhoto(userUpdateDto.getPhoto());
+            user.setPhone(userUpdateDto.getPhone());
         }
 
         if (userUpdateDto.getNickname() != null) {
             user.setNickname(userUpdateDto.getNickname());
-        }
-        if (userUpdateDto.getPhone() != null) {
-            user.setPhone(userUpdateDto.getPhone());
         }
         if (userUpdateDto.getEmail() != null) {
             user.setEmail(userUpdateDto.getEmail());

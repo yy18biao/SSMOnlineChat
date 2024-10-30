@@ -409,7 +409,7 @@ const handleUploadError = () => {
       <el-dropdown>
       <span class="el-dropdown__box">
               <strong>当前用户：</strong>
-            <span style="width: 20px; color: black"></span>{{ loginUser.nickname }}
+            <span style="width: 20px; color: black" id="loginUserNickname"></span>{{ loginUser.nickname }}
           <el-icon><ArrowDownBold/></el-icon>
       </span>
         <template #dropdown>
@@ -470,28 +470,28 @@ const handleUploadError = () => {
 
   <el-drawer v-model="drawer" :destroy-on-close="true" :with-header="false" size="50%">
     <div>昵称：
-      <el-input v-model="updateUserData.nickname" size="default" input-style="width: 100px"></el-input>
+      <el-input v-model="updateUserData.nickname" id="update-nickname" size="default" input-style="width: 100px"></el-input>
     </div>
     <div>邮箱：
-      <el-input v-model="updateUserData.email" size="default" input-style="width: 100px"></el-input>
+      <el-input v-model="updateUserData.email" id="update-email" size="default" input-style="width: 100px"></el-input>
     </div>
     <div>签名：
-      <el-input v-model="updateUserData.introduce" size="default" input-style="width: 100px"></el-input>
+      <el-input v-model="updateUserData.introduce" id="update-introduce" size="default" input-style="width: 100px"></el-input>
     </div>
     <div>电话：</div>
     <div style="display: flex">
-      <el-input v-model="updateUserData.phone" size="default" input-style="width: 100px"></el-input>
-      <el-button :type="'primary'" @click="updatePhoneCode">{{ txt }}</el-button>
+      <el-input v-model="updateUserData.phone" id="update-phone" size="default" input-style="width: 100px"></el-input>
+      <el-button :type="'primary'" @click="updatePhoneCode" id="code-button">{{ txt }}</el-button>
     </div>
     <div>验证码：
-      <el-input v-model="updateUserData.code" size="default"
+      <el-input v-model="updateUserData.code" size="default" id="update-code"
                 input-style="width: 100px"></el-input>
     </div>
     <div style="margin-top: 100px">
-      <el-button :type="'primary'" @click="updateUser">确认修改</el-button>
+      <el-button :type="'primary'" @click="updateUser" id="update-button">确认修改</el-button>
     </div>
     <div style="margin-top: 10px">
-      <el-button :type="'warning'" @click="updateDialogFlag = true">修改密码</el-button>
+      <el-button :type="'warning'" @click="updateDialogFlag = true" id="switch-update-password">修改密码</el-button>
     </div>
   </el-drawer>
 

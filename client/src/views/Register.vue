@@ -3,21 +3,18 @@
         <div class="main">
             <!-- logo层 -->
             <div class="logo">onlineChat注册</div>
-            <el-button type="text" class="return-login" @click="router.push('/user/login')">返回</el-button>
+            <el-button type="text" class="return-login" id="return-login" @click="router.push('/user/login')">返回</el-button>
 
             <div class="input">
-                <el-input v-model="mobileForm.phone" type="text" class="phone-input" placeholder="请输入手机号码"/>
+                <el-input v-model="mobileForm.phone" type="text" class="phone-input" id="phone-input" placeholder="请输入手机号码"/>
                 <div>
-                    <el-input v-model="mobileForm.code" type="password" class="code-input" placeholder="请输入验证码"/>
-                    <el-button type="primary" class="code-button" @click="getRegCode">{{ txt }}</el-button>
+                    <el-input v-model="mobileForm.code" type="password" class="code-input" id="code-input" placeholder="请输入验证码"/>
+                    <el-button type="primary" class="code-button" id="code-button" @click="getRegCode">{{ txt }}</el-button>
                 </div>
-                <el-input v-model="mobileForm.password" type="password" class="pass-input" placeholder="请输入密码"/>
-                <el-input v-model="mobileForm.aPassword" type="password" class="again-pass-input"
+                <el-input v-model="mobileForm.password" type="password" class="pass-input" id="pass-input" placeholder="请输入密码"/>
+                <el-input v-model="mobileForm.aPassword" type="password" class="again-pass-input" id="again-pass-input"
                           placeholder="请确认密码"/>
-                <el-input v-model="mobileForm.nickname" type="text" class="nickname-input"
-                          placeholder="输入昵称(非必填)"/>
-                <el-input v-model="mobileForm.email" type="text" class="email-input" placeholder="输入邮箱(非必填)"/>
-                <el-button type="primary" class="reg-button" @click="reg">注册</el-button>
+                <el-button type="primary" class="reg-button" id="reg-button" @click="reg">注册</el-button>
             </div>
 
             <div class="bottom">
@@ -39,8 +36,6 @@ const mobileForm = reactive({
     phone: '',
     password: '',
     aPassword: '',
-    nickname: '',
-    email: '',
     code: ''
 })
 

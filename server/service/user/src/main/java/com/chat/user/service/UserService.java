@@ -75,33 +75,31 @@ public class UserService {
     }
 
     // 发送注册验证码
-    public boolean sendRegCode(UserDto userDto) {
-        if (!checkPhone(userDto.getPhone())) {
+    public boolean sendRegCode(String phone) {
+        if (!checkPhone(phone)) {
             throw new ServiceException(ResCode.FAILED_PHONE);
         }
 
         String code = RandomUtil.randomNumbers(6);
-        String phone = userDto.getPhone();
 
         // 存储到redis中 有效时间5分钟
         redisService.set(RedisConstants.REG_PHONE_CODE_KEY + phone, code, 5L, TimeUnit.MINUTES);
 
-        return smsService.sendPhoneCode(userDto.getPhone(), code);
+        return smsService.sendPhoneCode(phone, code);
     }
 
     // 发送登录验证码
-    public boolean sendLoginCode(UserDto userDto) {
-        if (!checkPhone(userDto.getPhone())) {
+    public boolean sendLoginCode(String phone) {
+        if (!checkPhone(phone)) {
             throw new ServiceException(ResCode.FAILED_PHONE);
         }
 
         String code = RandomUtil.randomNumbers(6);
-        String phone = userDto.getPhone();
 
         // 存储到redis中 有效时间5分钟
         redisService.set(RedisConstants.LOGIN_PHONE_CODE_KEY + phone, code, 5L, TimeUnit.MINUTES);
 
-        return smsService.sendPhoneCode(userDto.getPhone(), code);
+        return smsService.sendPhoneCode(phone, code);
     }
 
     // 发送修改手机号验证码

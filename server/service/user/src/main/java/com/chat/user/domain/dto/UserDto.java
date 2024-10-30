@@ -6,8 +6,6 @@ import lombok.Data;
 
 @Data
 public class UserDto {
-    @JsonSerialize(using = ToStringSerializer.class)
-    private Long userId;
     private String phone;
     private String password;
     private String code;

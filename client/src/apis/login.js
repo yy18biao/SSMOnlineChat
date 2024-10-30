@@ -1,10 +1,12 @@
 import service from "@/utils/request";
 
-export function sendLoginCodeService(params = {}) {
+export function sendLoginCodeService(phone) {
     return service({
         url: "/user/sendLoginCode",
         method: "post",
-        data: params,
+        params: {
+            phone: phone
+        },
     });
 }
 
@@ -24,11 +26,13 @@ export function codeLoginService(params = {}) {
     });
 }
 
-export function sendRegCodeService(params = {}) {
+export function sendRegCodeService(phone) {
     return service({
         url: "/user/sendRegCode",
         method: "post",
-        data: params,
+        params: {
+            phone: phone
+        },
     });
 }
 

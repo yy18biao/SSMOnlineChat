@@ -23,13 +23,13 @@ public class UserController {
     private UserService userService;
 
     @PostMapping("/sendRegCode")
-    public Resp<Void> sendRegCode(@RequestBody UserDto userDto) {
-        return userService.sendRegCode(userDto) ? Resp.ok() : Resp.fail();
+    public Resp<Void> sendRegCode(@RequestParam String phone) {
+        return userService.sendRegCode(phone) ? Resp.ok() : Resp.fail();
     }
 
     @PostMapping("/sendLoginCode")
-    public Resp<Void> sendLoginCode(@RequestBody UserDto userDto) {
-        return userService.sendLoginCode(userDto) ? Resp.ok() : Resp.fail();
+    public Resp<Void> sendLoginCode(@RequestParam String phone) {
+        return userService.sendLoginCode(phone) ? Resp.ok() : Resp.fail();
     }
 
     @PostMapping("/sendUpdatePhoneCode")

@@ -11,17 +11,17 @@
             </div>
 
             <div class="input">
-                <el-input v-model="mobileForm.phone" type="text" class="phone-input" placeholder="请输入手机号码"/>
-                <el-input v-model="mobileForm.password" type="password" class="pass-input"
+                <el-input v-model="mobileForm.phone" type="text" class="phone-input" id="phone-input" placeholder="请输入手机号码"/>
+                <el-input v-model="mobileForm.password" type="password" class="pass-input" id="pass-input"
                           v-if="!flag" placeholder="请输入密码"/>
                 <div v-if="flag">
-                    <el-input v-model="mobileForm.code" type="password" class="code-input"
+                    <el-input v-model="mobileForm.code" type="password" class="code-input" id="code-input"
                               placeholder="请输入验证码"/>
-                    <el-button type="primary" class="code-button" @click="getCode">{{ txt }}</el-button>
+                    <el-button type="primary" class="code-button" id="code-button" @click="getCode">{{ txt }}</el-button>
                 </div>
 
-                <el-button type="primary" class="login-button" @click="login">登录</el-button>
-                <el-button type="primary" class="reg-button" @click="router.push('/user/register')">注册</el-button>
+                <el-button type="primary" class="login-button" id="login-button" @click="login">登录</el-button>
+                <el-button type="primary" class="reg-button" id="reg-button" @click="router.push('/user/register')">注册</el-button>
 
             </div>
 
@@ -75,7 +75,7 @@ async function getCode() {
     else if (!phoneRegex.test(mobileForm.phone))
         return ElMessage.error("手机号码格式错误")
 
-    await sendLoginCodeService(mobileForm)
+    await sendLoginCodeService(mobileForm.phone)
     txt.value = '59s'
     let num = 59
     timer = setInterval(() => {
@@ -113,7 +113,7 @@ async function login() {
         if (mobileForm.code === null || mobileForm.code === '')
             return ElMessage.error("请输入验证码")
 
-        const loginRef = await passLoginService(mobileForm)
+        const loginRef = await codeLoginService(mobileForm)
         setToken(loginRef.data[0])
         setUserId(loginRef.data[1])
         await router.push("/user/main")

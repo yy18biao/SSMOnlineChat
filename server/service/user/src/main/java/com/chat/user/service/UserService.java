@@ -17,11 +17,13 @@ import com.chat.security.exception.ServiceException;
 import com.chat.security.service.TokenService;
 import com.chat.sms.SMSService;
 import com.chat.user.domain.User;
+import com.chat.user.domain.UserEs;
 import com.chat.user.domain.dto.PasswordUpdateDto;
 import com.chat.user.domain.dto.UserAddDto;
 import com.chat.user.domain.dto.UserDto;
 import com.chat.user.domain.dto.UserUpdateDto;
 import com.chat.user.domain.vo.UserVo;
+import com.chat.user.es.UserRepository;
 import com.chat.user.mapper.UserMapper;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
@@ -42,6 +44,9 @@ public class UserService {
 
     @Resource
     private SMSService smsService;
+
+    @Resource
+    private UserRepository userRepository;
 
     @Resource
     private RedisService redisService;
@@ -142,7 +147,7 @@ public class UserService {
         }
 
         // 判断用户是否已经存在
-        if (userMapper.selectCount(new LambdaQueryWrapper<User>().eq(User::getPhone, userAddDto.getPhone())) > 0) {
+        if (userRepository.findUserEsByPhone(userAddDto.getPhone()) != null) {
             throw new ServiceException(ResCode.PHONE_EXISTS);
         }
 
@@ -155,9 +160,16 @@ public class UserService {
         User user = BeanUtil.copyProperties(userAddDto, User.class);
         user.setPassword(BCryptUtils.encrypt(user.getPassword()));
         user.setNickname(user.getPhone());
+        if (userMapper.insert(user) < 1) return -1;
+
+
+        // 添加到es
+        user = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getPhone, userAddDto.getPhone()));
+        UserEs userEs = BeanUtil.copyProperties(user, UserEs.class);
+        userRepository.save(userEs);
 
         redisService.delete(RedisConstants.REG_PHONE_CODE_KEY + userAddDto.getPhone());
-        return userMapper.insert(user);
+        return 1;
     }
 
     // 密码登录
@@ -167,11 +179,11 @@ public class UserService {
             throw new ServiceException(ResCode.FAILED_PHONE);
         }
 
-        User user = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getPhone, phone));
-        if (user == null) {
+        if (userRepository.findUserEsByPhone(phone) == null) {
             throw new ServiceException(ResCode.USER_NOT_EXISTS);
         }
 
+        User user = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getPhone, phone));
         if (!BCryptUtils.matches(password, user.getPassword())) {
             throw new ServiceException(ResCode.FAILED_LOGIN);
         }
@@ -195,11 +207,11 @@ public class UserService {
             throw new ServiceException(ResCode.FAILED_PHONE);
         }
 
-        User user = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getPhone, phone));
-        if (user == null) {
+        if (userRepository.findUserEsByPhone(phone) == null) {
             throw new ServiceException(ResCode.USER_NOT_EXISTS);
         }
 
+        User user = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getPhone, phone));
         if (!code.equals(redisService.get(RedisConstants.LOGIN_PHONE_CODE_KEY + phone, String.class))) {
             throw new ServiceException(ResCode.FAILED_CODE);
         }
@@ -229,11 +241,11 @@ public class UserService {
         // 获取用户信息
         LoginUserData loginUserData = getLoginUserData(token);
 
-        User user = userMapper.selectById(loginUserData.getUserId());
-        if (user == null) {
+        UserEs useres = userRepository.findUserEsByUserId(loginUserData.getUserId());
+        if (useres == null) {
             return null;
         }
-        UserVo userVo = BeanUtil.copyProperties(user, UserVo.class);
+        UserVo userVo = BeanUtil.copyProperties(useres, UserVo.class);
 
         return Resp.ok(userVo);
     }
@@ -242,8 +254,8 @@ public class UserService {
         // 获取用户信息
         LoginUserData loginUserData = getLoginUserData(token);
 
-        User user = userMapper.selectById(loginUserData.getUserId());
-        if (user == null) {
+        UserEs useres = userRepository.findUserEsByUserId(loginUserData.getUserId());
+        if (useres == null) {
             throw new ServiceException(ResCode.USER_NOT_EXISTS);
         }
 
@@ -256,20 +268,23 @@ public class UserService {
             }
 
             redisService.delete(RedisConstants.UPDATE_PHONE_CODE_KEY + userUpdateDto.getPhone());
-            user.setPhone(userUpdateDto.getPhone());
+            useres.setPhone(userUpdateDto.getPhone());
         }
 
         if (userUpdateDto.getNickname() != null) {
-            user.setNickname(userUpdateDto.getNickname());
+            useres.setNickname(userUpdateDto.getNickname());
         }
         if (userUpdateDto.getEmail() != null) {
-            user.setEmail(userUpdateDto.getEmail());
+            useres.setEmail(userUpdateDto.getEmail());
         }
         if (userUpdateDto.getIntroduce() != null) {
-            user.setIntroduce(userUpdateDto.getIntroduce());
+            useres.setIntroduce(userUpdateDto.getIntroduce());
         }
 
+        userRepository.save(useres);
+
         ThreadLocalUtil.set("curUserId", loginUserData.getUserId());
+        User user = BeanUtil.copyProperties(useres, User.class);
         int i = userMapper.updateById(user);
         ThreadLocalUtil.remove();
         return i;

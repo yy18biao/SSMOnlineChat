@@ -121,13 +121,13 @@ public class FriendService {
         Friend friend = new Friend();
         friend.setFriendId(friendId);
         friend.setUserId(loginUserData.getUserId());
-        friend.setFriendName(friendApply.getNickname());
+        friend.setFriendName("");
         friend.setFriendPhoto(friendApply.getPhoto());
 
         Friend friend1 = new Friend();
         friend1.setFriendId(loginUserData.getUserId());
         friend1.setUserId(friendId);
-        friend1.setFriendName(loginUserData.getNickname());
+        friend1.setFriendName("");
         friend1.setFriendPhoto(loginUserData.getPhoto());
 
         ThreadLocalUtil.set("curUserId", loginUserData.getUserId());

@@ -1,5 +1,6 @@
 package com.chat.user.rabbit;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
 import com.chat.core.constants.HttpConstants;
 import com.chat.core.domain.LoginUserData;
@@ -10,6 +11,8 @@ import com.chat.core.utils.ThreadLocalUtil;
 import com.chat.security.exception.ServiceException;
 import com.chat.security.service.TokenService;
 import com.chat.user.domain.User;
+import com.chat.user.domain.UserEs;
+import com.chat.user.es.UserRepository;
 import com.chat.user.mapper.UserMapper;
 import com.chat.user.service.UserService;
 import jakarta.annotation.Resource;
@@ -23,6 +26,9 @@ import org.springframework.stereotype.Component;
 public class ConsumeService {
     @Resource
     private UserMapper userMapper;
+
+    @Resource
+    private UserRepository userRepository;
 
     @Resource
     private TokenService tokenService;
@@ -56,7 +62,10 @@ public class ConsumeService {
         if (rabbitUserDto.getDtoType().equals("updateHead")) {
             User user = userMapper.selectById(loginUserData.getUserId());
             user.setPhoto("https://biao22.oss-cn-guangzhou.aliyuncs.com/" + rabbitUserDto.getPhoto());
-        if (userMapper.updateById(user) > 0) {
+            if (userMapper.updateById(user) > 0) {
+                // 修改es
+                UserEs userEs = BeanUtil.copyProperties(user, UserEs.class);
+                userRepository.save(userEs);
                 // 发布消息让websocket模块通知用户
                 RabbitUserVo rabbitUserVo = new RabbitUserVo();
                 rabbitUserVo.setUserId(loginUserData.getUserId());

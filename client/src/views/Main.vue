@@ -303,7 +303,7 @@ async function handleAddChatSession(friendId) {
 }
 
 // websocket连接
-const webSocket = new WebSocket("ws://127.0.0.1:8006/onlineChat")
+const webSocket = new WebSocket("ws://127.0.0.1:10006/onlineChat")
 
 // 连接建立成功
 webSocket.onopen = function () {
@@ -372,7 +372,6 @@ webSocket.onmessage = function (message) {
     if (resp.photo !== null || resp.photo !== '') {
       loginUser.photo = resp.photo
     }
-    console.log(loginUser);
   }
 }
 
@@ -424,10 +423,9 @@ const handleUploadError = () => {
       <div class="left">
         <el-menu class="el-menu">
           <el-menu-item>
-            <!--            TODO 头像上传-->
             <el-upload action="/api-dev/file/uploadFile" :show-file-list="false"
                        :headers="headers" :on-success="handleUploadSuccess" :on-error="handleUploadError">
-              <img class="photo" v-if="loginUser.photo" :src="loginUser.photo"/>
+              <img class="photo" v-if="loginUser.photo" :src="loginUser.photo" alt=""/>
               <el-icon v-else>
                 <Plus/>
               </el-icon>
@@ -452,8 +450,7 @@ const handleUploadError = () => {
       </div>
       <div class="mid">
         <mid-session v-if="midFlag === 1" @openChatSessionRight="handleOpenChatRight"
-                     :chat-session-id="curChatSessionId" :session-data-list="sessionDataList"
-                     :right-flag="rightFlag"/>
+                     :session-data-list="sessionDataList" :right-flag="rightFlag" cur-session-id="curChatSessionId"/>
         <mid-friend v-if="midFlag === 2" @openFriendRight="handleOpenFriendRight" ref="midFriendRef"
                     @addFriend="handleSendWebSocket"/>
       </div>

@@ -1,6 +1,5 @@
 package com.chat.file.service;
 
-import com.aliyun.oss.OSSClient;
 import com.chat.core.enums.ResCode;
 import com.chat.oss.domain.OSSResp;
 import com.chat.oss.service.OSSService;

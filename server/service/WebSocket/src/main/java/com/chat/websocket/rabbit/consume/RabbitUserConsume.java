@@ -25,6 +25,7 @@ public class RabbitUserConsume {
 
     @RabbitListener(queues = "user")
     public void consume(RabbitUserVo rabbitUserVo) throws IOException {
+        System.out.println(rabbitUserVo);
         if(rabbitUserVo.getRespType().equals("updateHead")){
             // 修改头像成功 通知用户刷新头像
             WebSocketSession socketSession = onlineWebsocketService.getSession(rabbitUserVo.getUserId());

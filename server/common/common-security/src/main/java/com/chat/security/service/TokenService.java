@@ -2,7 +2,7 @@ package com.chat.security.service;
 
 import cn.hutool.core.lang.UUID;
 import com.chat.core.constants.RedisConstants;
-import com.chat.core.domain.LoginUserData;
+import com.chat.core.entity.LoginUserData;
 import com.chat.core.utils.JwtUtils;
 import com.chat.redis.service.RedisService;
 import io.jsonwebtoken.Claims;
@@ -26,28 +26,6 @@ public class TokenService {
         // 生成token
         Map<String, Object> claims = new HashMap<>();
         String userKey = UUID.fastUUID().toString();
-        claims.put("userId", userId);
-        claims.put("userKey", userKey);
-        String token = JwtUtils.createToken(claims, secret);
-
-        // 将用户敏感信息对象与userId存放到redis
-        String key = RedisConstants.LOGIN_TOKEN_KEY + userKey;
-        LoginUserData loginUserData = new LoginUserData();
-        loginUserData.setIdentity(identity);
-        loginUserData.setNickname(nickname);
-        loginUserData.setPhoto(photo);
-
-        redisService.set(key, loginUserData, RedisConstants.EXP, TimeUnit.MINUTES);
-
-        return token;
-    }
-
-    // 登录成功创建token
-    public String createToken(Long userId, String secret, Integer identity, String nickname, String photo) {
-        // 生成token
-        Map<String, Object> claims = new HashMap<>();
-        String userKey = UUID.fastUUID().toString();
-        claims.put("userId", userId);
         claims.put("userKey", userKey);
         String token = JwtUtils.createToken(claims, secret);
 
@@ -96,19 +74,13 @@ public class TokenService {
         return redisService.delete(RedisConstants.LOGIN_TOKEN_KEY + userKey);
     }
 
-    // 获取token中payload的userId
-    public String getUserId(Claims claims) {
-        if (claims == null) return null;
-        return String.valueOf(JwtUtils.getUserId(claims));
-    }
-
     // 获取token数据中payload的userKey
     public String getUserKey(Claims claims) {
         if (claims == null) return null;
         return JwtUtils.getUserKey(claims);
     }
 
-    private String getUserKey(String token, String secret) {
+    public String getUserKey(String token, String secret) {
         Claims claims = getClaims(token, secret);
         if (claims == null) return null;
         return JwtUtils.getUserKey(claims);

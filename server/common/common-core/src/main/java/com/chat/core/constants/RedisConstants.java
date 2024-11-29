@@ -13,5 +13,7 @@ public class RedisConstants {
 
     public final static String UPDATE_PHONE_CODE_KEY = "updatePhoneCode:";
 
+    public final static String UPDATE_EMAIL_CODE_KEY = "updateEmailCode:";
+
     public final static String UPDATE_PASSWORD_CODE_KEY = "updatePasswordCode:";
 }

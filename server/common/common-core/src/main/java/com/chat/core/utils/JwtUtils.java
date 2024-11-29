@@ -23,10 +23,7 @@ public class JwtUtils {
     public static String getUserKey(Claims claims) {
         return toStr(claims.get("userKey"));
     }
-    // 获取userId的值
-    public static String getUserId(Claims claims) {
-        return toStr(claims.get("userId"));
-    }
+
     // 将value转换为字符串类型
     private static String toStr(Object value) {
         if (value == null) {

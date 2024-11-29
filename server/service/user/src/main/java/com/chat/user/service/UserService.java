@@ -1,146 +1,109 @@
 package com.chat.user.service;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.exceptions.ExceptionUtil;
+import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.lang.ObjectId;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
+import com.aliyun.oss.OSSClient;
+import com.aliyun.oss.model.CannedAccessControlList;
+import com.aliyun.oss.model.ObjectMetadata;
+import com.aliyun.oss.model.PutObjectRequest;
+import com.aliyun.oss.model.PutObjectResult;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.chat.core.constants.HttpConstants;
 import com.chat.core.constants.RedisConstants;
-import com.chat.core.domain.LoginUserData;
-import com.chat.core.domain.Resp;
+import com.chat.core.entity.LoginUserData;
 import com.chat.core.enums.ResCode;
 import com.chat.core.enums.UserIdentity;
 import com.chat.core.utils.BCryptUtils;
 import com.chat.core.utils.ThreadLocalUtil;
+import com.chat.oss.config.OSSProperties;
+import com.chat.oss.domain.OSSResp;
 import com.chat.redis.service.RedisService;
 import com.chat.security.exception.ServiceException;
 import com.chat.security.service.TokenService;
 import com.chat.sms.SMSService;
-import com.chat.user.domain.User;
-import com.chat.user.domain.UserEs;
-import com.chat.user.domain.dto.PasswordUpdateDto;
-import com.chat.user.domain.dto.UserAddDto;
-import com.chat.user.domain.dto.UserDto;
-import com.chat.user.domain.dto.UserUpdateDto;
-import com.chat.user.domain.vo.UserVo;
+import com.chat.user.entity.User;
+import com.chat.user.entity.UserEs;
+import com.chat.user.entity.dto.SendCodeDto;
+import com.chat.user.entity.dto.UserAddDto;
+import com.chat.user.entity.dto.UserUpdateDto;
+import com.chat.user.entity.vo.UserVo;
 import com.chat.user.es.UserRepository;
 import com.chat.user.mapper.UserMapper;
 import jakarta.annotation.Resource;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
+@Slf4j
 public class UserService {
-    @Resource
+    @Autowired
     private UserMapper userMapper;
 
-    @Resource
-    private SMSService smsService;
-
-    @Resource
+    @Autowired
     private UserRepository userRepository;
 
-    @Resource
+    @Autowired
     private RedisService redisService;
 
-    @Resource
+    @Autowired
+    private SMSService smsService;
+
+    @Autowired
     private TokenService tokenService;
 
     @Value("${jwt.secret}")
     private String secret;
 
-    // 判断手机合理性
-    public static boolean checkPhone(String phone) {
-        Pattern regex = Pattern.compile("^1[345789]\\d{9}$");
-        Matcher m = regex.matcher(phone);
-        return m.matches();
-    }
+    @Resource
+    private OSSProperties properties;
 
-    private LoginUserData getLoginUserData(String token) {
-        // 判断token合理性和去除token前缀
-        if (StrUtil.isNotEmpty(token) && token.startsWith(HttpConstants.PREFIX)) {
-            token = token.replaceFirst(HttpConstants.PREFIX, StrUtil.EMPTY);
-        }
+    @Resource
+    private OSSClient ossClient;
 
-        // 获取用户信息
-        LoginUserData loginUserData = tokenService.getLoginUser(token, secret);
-        if (loginUserData == null) {
-            throw new ServiceException(ResCode.FAILED_UNAUTHORIZED);
-        }
-
-        return loginUserData;
-    }
-
-    // 发送注册验证码
-    public boolean sendRegCode(String phone) {
-        if (!checkPhone(phone)) {
+    // 发送手机验证码
+    public boolean sendRegCode(SendCodeDto sendCodeDto) {
+        if (!checkPhone(sendCodeDto.getPhone())) {
             throw new ServiceException(ResCode.FAILED_PHONE);
         }
 
         String code = RandomUtil.randomNumbers(6);
 
         // 存储到redis中 有效时间5分钟
-        redisService.set(RedisConstants.REG_PHONE_CODE_KEY + phone, code, 5L, TimeUnit.MINUTES);
+        if (sendCodeDto.getStatus().equals(1)) {
+            // 注册
+            redisService.set(RedisConstants.REG_PHONE_CODE_KEY + sendCodeDto.getPhone(), code, 5L, TimeUnit.MINUTES);
+        } else if (sendCodeDto.getStatus().equals(2)) {
+            // 登录
+            redisService.set(RedisConstants.LOGIN_PHONE_CODE_KEY + sendCodeDto.getPhone(), code, 5L, TimeUnit.MINUTES);
+        } else if (sendCodeDto.getStatus().equals(3)) {
+            // 修改手机号码需要判断该手机号码是否已经存在
+            if (userRepository.findUserEsByPhone(sendCodeDto.getPhone()) != null)
+                throw new ServiceException(ResCode.PHONE_EXISTS);
 
-        return smsService.sendPhoneCode(phone, code);
-    }
-
-    // 发送登录验证码
-    public boolean sendLoginCode(String phone) {
-        if (!checkPhone(phone)) {
-            throw new ServiceException(ResCode.FAILED_PHONE);
+            redisService.set(RedisConstants.UPDATE_PHONE_CODE_KEY + sendCodeDto.getPhone(), code, 5L, TimeUnit.MINUTES);
+        } else if (sendCodeDto.getStatus().equals(4)) {
+            // 修改密码
+            redisService.set(RedisConstants.UPDATE_PASSWORD_CODE_KEY + sendCodeDto.getPhone(), code, 5L, TimeUnit.MINUTES);
         }
 
-        String code = RandomUtil.randomNumbers(6);
-
-        // 存储到redis中 有效时间5分钟
-        redisService.set(RedisConstants.LOGIN_PHONE_CODE_KEY + phone, code, 5L, TimeUnit.MINUTES);
-
-        return smsService.sendPhoneCode(phone, code);
-    }
-
-    // 发送修改手机号验证码
-    public boolean sendUpdatePhoneCode(String phone) {
-        if (!checkPhone(phone)) {
-            throw new ServiceException(ResCode.FAILED_PHONE);
-        }
-
-        // 判断用户是否已经存在
-        if (userMapper.selectCount(new LambdaQueryWrapper<User>().eq(User::getPhone, phone)) > 0) {
-            throw new ServiceException(ResCode.PHONE_EXISTS);
-        }
-
-        String code = RandomUtil.randomNumbers(6);
-
-        // 存储到redis中 有效时间5分钟
-        redisService.set(RedisConstants.UPDATE_PHONE_CODE_KEY + phone, code, 5L, TimeUnit.MINUTES);
-
-        return smsService.sendPhoneCode(phone, code);
-    }
-
-    // 发送修改密码验证码
-    public boolean sendUpdatePasswordCode(String phone) {
-        if (!checkPhone(phone)) {
-            throw new ServiceException(ResCode.FAILED_PHONE);
-        }
-        String code = RandomUtil.randomNumbers(6);
-
-        // 存储到redis中 有效时间5分钟
-        redisService.set(RedisConstants.UPDATE_PASSWORD_CODE_KEY + phone, code, 5L, TimeUnit.MINUTES);
-
-        return smsService.sendPhoneCode(phone, code);
+        return smsService.sendPhoneCode(sendCodeDto.getPhone(), code);
     }
 
     // 注册
-    public int reg(UserAddDto userAddDto) {
+    public boolean reg(UserAddDto userAddDto) {
         // 判断手机号码是否合理
         if (!checkPhone(userAddDto.getPhone())) {
             throw new ServiceException(ResCode.FAILED_PHONE);
@@ -157,170 +120,282 @@ public class UserService {
             throw new ServiceException(ResCode.FAILED_CODE);
         }
 
+        // 添加数据库
         User user = BeanUtil.copyProperties(userAddDto, User.class);
         user.setPassword(BCryptUtils.encrypt(user.getPassword()));
-        user.setNickname(user.getPhone());
-        if (userMapper.insert(user) < 1) return -1;
+        if (userMapper.insert(user) < 1) {
+            return false;
+        }
 
-
-        // 添加到es
+        // 添加到 es
         user = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getPhone, userAddDto.getPhone()));
         UserEs userEs = BeanUtil.copyProperties(user, UserEs.class);
         userRepository.save(userEs);
 
+        // 删除 redis 中的验证码
         redisService.delete(RedisConstants.REG_PHONE_CODE_KEY + userAddDto.getPhone());
-        return 1;
+
+        return true;
     }
 
-    // 密码登录
-    public List<String> passLogin(String phone, String password, HttpServletRequest request) {
+    public String passLogin(String phone, String password) {
         // 判断手机号码是否合理
         if (!checkPhone(phone)) {
             throw new ServiceException(ResCode.FAILED_PHONE);
         }
 
+        // 判断用户是否存在
         if (userRepository.findUserEsByPhone(phone) == null) {
             throw new ServiceException(ResCode.USER_NOT_EXISTS);
         }
 
+        // 判断密码是否正确
         User user = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getPhone, phone));
         if (!BCryptUtils.matches(password, user.getPassword())) {
             throw new ServiceException(ResCode.FAILED_LOGIN);
         }
 
-        List<String> list = new ArrayList<>();
-        list.add(tokenService.createToken(user.getUserId(), secret,
-                UserIdentity.ORDINARY.getValue(), user.getNickname(),
-                user.getPhoto()));
-        list.add(user.getUserId().toString());
+        switch (user.getStatus()) {
+            case 1:
+                break;
+            case 2:
+                throw new ServiceException(ResCode.FREEZE_APPLY);
+            case 3:
+                throw new ServiceException(ResCode.CANCEL_APPLY);
+            case 4:
+                throw new ServiceException(ResCode.FREEZE_NOW);
+        }
 
-        HttpSession session = request.getSession(true);
-        session.setAttribute("curUserId", user.getUserId());
-
-        return list;
+        return tokenService.createToken(user.getUserId(), secret, UserIdentity.ORDINARY.getValue(),
+                user.getNickname(), user.getPhoto());
     }
 
-    // 验证码登录
-    public List<String> codeLogin(String phone, String code, HttpServletRequest request) {
+    public String codeLogin(String phone, String code) {
         // 判断手机号码是否合理
         if (!checkPhone(phone)) {
             throw new ServiceException(ResCode.FAILED_PHONE);
         }
 
-        if (userRepository.findUserEsByPhone(phone) == null) {
+        // 判断用户是否存在
+        UserEs userEs = userRepository.findUserEsByPhone(phone);
+        if (userEs == null) {
             throw new ServiceException(ResCode.USER_NOT_EXISTS);
         }
 
-        User user = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getPhone, phone));
+        // 判断验证码是否正确
         if (!code.equals(redisService.get(RedisConstants.LOGIN_PHONE_CODE_KEY + phone, String.class))) {
             throw new ServiceException(ResCode.FAILED_CODE);
         }
 
+        // 删除缓存中的验证码
         redisService.delete(RedisConstants.LOGIN_PHONE_CODE_KEY + phone);
 
-        List<String> list = new ArrayList<>();
-        list.add(tokenService.createToken(user.getUserId(), secret,
-                UserIdentity.ORDINARY.getValue(), user.getNickname(),
-                user.getPhoto()));
-        list.add(user.getUserId().toString());
+        switch (userEs.getStatus()) {
+            case 1:
+                break;
+            case 2:
+                throw new ServiceException(ResCode.FREEZE_APPLY);
+            case 3:
+                throw new ServiceException(ResCode.CANCEL_APPLY);
+            case 4:
+                throw new ServiceException(ResCode.FREEZE_NOW);
+        }
 
-        HttpSession session = request.getSession(true);
-        session.setAttribute("curUserId", user.getUserId());
-
-        return list;
+        return tokenService.createToken(userEs.getUserId(), secret, UserIdentity.ORDINARY.getValue(),
+                userEs.getNickname(), userEs.getPhoto());
     }
 
     public boolean logout(String token) {
         if (StrUtil.isNotEmpty(token) && token.startsWith(HttpConstants.PREFIX)) {
             token = token.replaceFirst(HttpConstants.PREFIX, StrUtil.EMPTY);
         }
+
         return tokenService.deleteLoginUser(token, secret);
     }
 
-    public Resp<UserVo> getUser(String token) {
-        // 获取用户信息
+    public UserVo getUser(String token) {
+        // 从es获取用户信息
         LoginUserData loginUserData = getLoginUserData(token);
-
-        UserEs useres = userRepository.findUserEsByUserId(loginUserData.getUserId());
-        if (useres == null) {
-            return null;
-        }
-        UserVo userVo = BeanUtil.copyProperties(useres, UserVo.class);
-
-        return Resp.ok(userVo);
+        return BeanUtil.copyProperties(userRepository.findUserEsByUserId(loginUserData.getUserId()), UserVo.class);
     }
 
-    public int updateUser(UserUpdateDto userUpdateDto, String token) {
-        // 获取用户信息
-        LoginUserData loginUserData = getLoginUserData(token);
-
-        UserEs useres = userRepository.findUserEsByUserId(loginUserData.getUserId());
-        if (useres == null) {
+    public boolean updateUser(String token, UserUpdateDto userUpdateDto) {
+        // 从es获取用户数据
+        UserEs userEs = userRepository.findUserEsByUserId(userUpdateDto.getUserId());
+        if (userEs == null) {
             throw new ServiceException(ResCode.USER_NOT_EXISTS);
         }
 
+        // 手机号码不为空时，判断验证码
         if (userUpdateDto.getPhone() != null) {
             // 获取验证码
             String code = redisService.get(RedisConstants.UPDATE_PHONE_CODE_KEY + userUpdateDto.getPhone(), String.class);
             // 判断验证码
-            if (code != null && !userUpdateDto.getCode().equals(code)) {
+            if (code != null && !userUpdateDto.getPhoneCode().equals(code)) {
                 throw new ServiceException(ResCode.FAILED_CODE);
             }
 
             redisService.delete(RedisConstants.UPDATE_PHONE_CODE_KEY + userUpdateDto.getPhone());
-            useres.setPhone(userUpdateDto.getPhone());
+            userEs.setPhone(userUpdateDto.getPhone());
         }
 
-        if (userUpdateDto.getNickname() != null) {
-            useres.setNickname(userUpdateDto.getNickname());
-        }
+        // 邮箱不为空时，判断验证码
         if (userUpdateDto.getEmail() != null) {
-            useres.setEmail(userUpdateDto.getEmail());
+            // 获取验证码
+            String code = redisService.get(RedisConstants.UPDATE_EMAIL_CODE_KEY + userUpdateDto.getEmail(), String.class);
+            // 判断验证码
+            if (code != null && !userUpdateDto.getEmailCode().equals(code)) {
+                throw new ServiceException(ResCode.FAILED_CODE);
+            }
+
+            redisService.delete(RedisConstants.UPDATE_EMAIL_CODE_KEY + userUpdateDto.getEmail());
+            userEs.setEmail(userUpdateDto.getEmail());
+        }
+
+        // 昵称和个性签名
+        if (userUpdateDto.getNickname() != null) {
+            userEs.setNickname(userUpdateDto.getNickname());
+
+            // 修改redis中存储的已登录的token信息
+            String userKey = tokenService.getUserKey(token, secret);
+            LoginUserData loginUserData = getLoginUserData(token);
+            loginUserData.setNickname(userUpdateDto.getNickname());
+            redisService.set(RedisConstants.LOGIN_TOKEN_KEY + userKey, loginUserData, RedisConstants.EXP, TimeUnit.MINUTES);
         }
         if (userUpdateDto.getIntroduce() != null) {
-            useres.setIntroduce(userUpdateDto.getIntroduce());
+            userEs.setIntroduce(userUpdateDto.getIntroduce());
         }
 
-        userRepository.save(useres);
+        // 更新 es
+        userRepository.save(userEs);
 
-        ThreadLocalUtil.set("curUserId", loginUserData.getUserId());
-        User user = BeanUtil.copyProperties(useres, User.class);
+        // 更新数据库
+        ThreadLocalUtil.set("curUserId", userUpdateDto.getUserId());
+        User user = BeanUtil.copyProperties(userEs, User.class);
         int i = userMapper.updateById(user);
         ThreadLocalUtil.remove();
-        return i;
+
+        return i > 0;
     }
 
-    public int updatePassword(PasswordUpdateDto passwordUpdateDto, String token) {
-        // 获取用户信息
-        LoginUserData loginUserData = getLoginUserData(token);
-
-        User user = userMapper.selectById(loginUserData.getUserId());
+    public boolean updatePassword(UserUpdateDto userUpdateDto) {
+        User user = userMapper.selectById(userUpdateDto.getUserId());
         if (user == null) {
             throw new ServiceException(ResCode.USER_NOT_EXISTS);
         }
 
-        if (!BCryptUtils.matches(passwordUpdateDto.getOldPassword(), user.getPassword())) {
+        // 判断输入的旧密码是否和当前密码匹配
+        if (!BCryptUtils.matches(userUpdateDto.getOldPassword(), user.getPassword())) {
             throw new ServiceException(ResCode.OLD_PASSWORD_NO_PASSWORD);
-        }
-
-        if (!passwordUpdateDto.getNewPassword().equals(passwordUpdateDto.getConfirmPassword())) {
-            throw new ServiceException(ResCode.PASSWORD_NO_PASSWORD);
         }
 
         // 获取验证码
         String code = redisService.get(RedisConstants.UPDATE_PASSWORD_CODE_KEY + user.getPhone(), String.class);
         // 判断验证码
-        if (!passwordUpdateDto.getCode().equals(code)) {
+        if (!userUpdateDto.getPasswordCode().equals(code)) {
             throw new ServiceException(ResCode.FAILED_CODE);
         }
+
         redisService.delete(RedisConstants.UPDATE_PASSWORD_CODE_KEY + user.getPhone());
 
-        user.setPassword(BCryptUtils.encrypt(passwordUpdateDto.getNewPassword()));
-
-        ThreadLocalUtil.set("curUserId", loginUserData.getUserId());
+        // 更新数据库
+        ThreadLocalUtil.set("curUserId", userUpdateDto.getUserId());
+        user.setPassword(BCryptUtils.encrypt(userUpdateDto.getPassword()));
         int i = userMapper.updateById(user);
         ThreadLocalUtil.remove();
 
-        return i;
+        return i > 0;
+    }
+
+    public boolean uploadPhoto(String token, MultipartFile file) throws IOException {
+        InputStream inputStream = null;
+        try {
+            String fileName;
+            if (file.getOriginalFilename() != null) {
+                fileName = file.getOriginalFilename().toLowerCase();
+            } else {
+                fileName = "1.png";
+            }
+            String extName = fileName.substring(fileName.lastIndexOf(".") + 1);
+            inputStream = file.getInputStream();
+
+            // 上传
+            fileName = upload(extName, inputStream);
+            if (fileName.isEmpty()) {
+                return false;
+            }
+
+            // 修改redis中存储的已登录的token信息
+            String userKey = tokenService.getUserKey(token, secret);
+            LoginUserData loginUserData = getLoginUserData(token);
+            loginUserData.setPhoto(fileName);
+            redisService.set(RedisConstants.LOGIN_TOKEN_KEY + userKey, loginUserData, RedisConstants.EXP, TimeUnit.MINUTES);
+
+            return true;
+        } catch (Exception e) {
+            log.error("OSS upload file error", e);
+            throw new ServiceException(ResCode.FAILED_FILE_UPLOAD);
+        } finally {
+            if (inputStream != null) {
+                inputStream.close();
+            }
+        }
+    }
+
+    public boolean updateStatus(String userId, Integer status) {
+        UserEs userEs = userRepository.findUserEsByUserId(userId);
+        if (userEs == null) {
+            throw new ServiceException(ResCode.USER_NOT_EXISTS);
+        }
+        userEs.setStatus(status);
+        userRepository.save(userEs);
+
+        User user = BeanUtil.copyProperties(userEs, User.class);
+        user.setStatus(status);
+        return userMapper.updateById(user) > 0;
+    }
+
+    // 判断手机合理性
+    private boolean checkPhone(String phone) {
+        Pattern regex = Pattern.compile("^1[345789]\\d{9}$");
+        Matcher m = regex.matcher(phone);
+        return m.matches();
+    }
+
+    // 根据token获取缓存中保存的用户基本信息
+    private LoginUserData getLoginUserData(String token) {
+        // 判断token合理性和去除token前缀
+        if (StrUtil.isNotEmpty(token) && token.startsWith(HttpConstants.PREFIX)) {
+            token = token.replaceFirst(HttpConstants.PREFIX, StrUtil.EMPTY);
+        }
+
+        // 获取用户信息
+        LoginUserData loginUserData = tokenService.getLoginUser(token, secret);
+        if (loginUserData == null) {
+            throw new ServiceException(ResCode.FAILED_UNAUTHORIZED);
+        }
+
+        return loginUserData;
+    }
+
+    private String upload(String fileType, InputStream inputStream) {
+        String key = "head-" + ObjectId.next() + "." + fileType;
+        ObjectMetadata objectMetadata = new ObjectMetadata();
+        objectMetadata.setObjectAcl(CannedAccessControlList.PublicRead);
+        PutObjectRequest request = new PutObjectRequest(properties.getBucket(), key, inputStream, objectMetadata);
+        PutObjectResult putObjectResult;
+        try {
+            putObjectResult = ossClient.putObject(request);
+        } catch (Exception e) {
+            log.error("OSS put object error: {}", ExceptionUtil.stacktraceToOneLineString(e, 500));
+            throw new ServiceException(ResCode.FAILED_FILE_UPLOAD);
+        }
+
+        OSSResp ossResult = new OSSResp();
+        if (putObjectResult == null || StrUtil.isBlank(putObjectResult.getRequestId())) {
+            return "";
+        }
+
+        return FileUtil.getName(key);
     }
 }

@@ -8,8 +8,8 @@ import { RouterView } from 'vue-router'
 
 <style>
 html, body, #app {
-    height: 100%;
-    margin: 0;
-    background-image: url(@/assets/images/background.png);
+  height: 100%;
+  margin: 0;
+  background-image: url(@/assets/images/background.png);
 }
 </style>

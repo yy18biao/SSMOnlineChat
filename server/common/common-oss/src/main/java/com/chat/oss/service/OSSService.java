@@ -12,7 +12,6 @@ import com.aliyun.oss.model.PutObjectResult;
 import com.chat.core.enums.ResCode;
 import com.chat.oss.config.OSSProperties;
 import com.chat.oss.domain.OSSResp;
-import com.chat.redis.service.RedisService;
 import com.chat.security.exception.ServiceException;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;

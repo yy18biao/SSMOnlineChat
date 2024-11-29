@@ -2,7 +2,7 @@ package com.chat.security.handler;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
-import com.chat.core.domain.Resp;
+import com.chat.core.entity.Resp;
 import com.chat.core.enums.ResCode;
 import com.chat.security.exception.ServiceException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 // 全局异常处理器
 @Slf4j
 @RestControllerAdvice
-public class GlobalExceptionHandler{
+public class GlobalExceptionHandler {
     // 请求方法不支持
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public Resp<?> handleHttpRequestMethodNotSupported(HttpRequestMethodNotSupportedException e, HttpServletRequest request){

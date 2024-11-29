@@ -1,15 +1,13 @@
 package com.chat.user.es;
 
-import com.chat.user.domain.UserEs;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import com.chat.user.entity.UserEs;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public interface UserRepository extends ElasticsearchRepository<UserEs, Long> {
     // 根据账号查找
-    UserEs findUserEsByUserId(Long userId);
+    UserEs findUserEsByUserId(String userId);
 
     // 根据昵称查找
     UserEs findUserEsByNickname(String nickname);

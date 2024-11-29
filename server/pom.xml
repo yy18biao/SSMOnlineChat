@@ -12,34 +12,43 @@
     </parent>
 
     <groupId>com.chat</groupId>
-    <artifactId>server</artifactId>
+    <artifactId>Server</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <modules>
         <module>common</module>
         <module>service</module>
-        <module>gateway</module>
     </modules>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
         <spring-boot.version>3.0.1</spring-boot.version>
         <spring-cloud-alibaba.version>2022.0.0.0-RC2</spring-cloud-alibaba.version>
         <spring-cloud.version>2022.0.0</spring-cloud.version>
-        <mybatis-plus.version>3.5.5</mybatis-plus.version>
-        <common-mybatis.version>1.0-SNAPSHOT</common-mybatis.version>
-        <common-core.version>1.0-SNAPSHOT</common-core.version>
-        <common-security.version>1.0-SNAPSHOT</common-security.version>
-        <common-redis.version>1.0-SNAPSHOT</common-redis.version>
-        <common-sms.version>1.0-SNAPSHOT</common-sms.version>
         <fastjson2.version>2.0.43</fastjson2.version>
-        <jjwt.version>0.9.1</jjwt.version>
-        <jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
-        <hutool-all.version>5.8.22</hutool-all.version>
+        <dysmsapi20170525.version>3.0.0</dysmsapi20170525.version>
+        <aliyun-sdk-oss.version>3.17.4</aliyun-sdk-oss.version>
+        <jaxb-api.version>2.3.1</jaxb-api.version>
+        <activation.version>1.1.1</activation.version>
+        <jaxb-runtime.version>2.3.3</jaxb-runtime.version>
         <pagehelper.version>2.0.0</pagehelper.version>
+        <mybatis-plus.version>3.5.5</mybatis-plus.version>
+        <jjwt.version>0.9.1</jjwt.version>
+        <hutool-all.version>5.8.22</hutool-all.version>
+        <transmittable-thread-local.version>2.14.4</transmittable-thread-local.version>
+        <springdoc-openapi-starter-webmvc-ui.version>2.6.0</springdoc-openapi-starter-webmvc-ui.version>
+
+        <common-core.version>1.0-SNAPSHOT</common-core.version>
+        <common-redis.version>1.0-SNAPSHOT</common-redis.version>
+        <common-security.version>1.0-SNAPSHOT</common-security.version>
+        <common-mybatis.version>1.0-SNAPSHOT</common-mybatis.version>
+        <common-es.version>1.0-SNAPSHOT</common-es.version>
+        <common-sms.version>1.0-SNAPSHOT</common-sms.version>
+        <common-swagger.version>1.0-SNAPSHOT</common-swagger.version>
+        <common-rabbitmq.version>1.0-SNAPSHOT</common-rabbitmq.version>
+        <common-oss.version>1.0-SNAPSHOT</common-oss.version>
     </properties>
 
     <dependencies>

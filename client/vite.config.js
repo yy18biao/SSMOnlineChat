@@ -9,6 +9,7 @@ import {ElementPlusResolver} from 'unplugin-vue-components/resolvers'
 
 // https://vite.dev/config/
 export default defineConfig({
+<<<<<<< HEAD
     plugins: [
         vue(),
         vueDevTools(),
@@ -26,6 +27,24 @@ export default defineConfig({
     },
     server: {
         port: 12000,
+=======
+  plugins: [
+    vue(),
+    AutoImport({
+      resolvers: [ElementPlusResolver()],
+    }),
+    Components({
+      resolvers: [ElementPlusResolver()],
+    }),
+  ],
+  resolve: {
+    alias: {
+      '@': fileURLToPath(new URL('./src', import.meta.url))
+    }
+  },
+  server: {
+    port: 11000,
+>>>>>>> parent of 9289d8b (日常运行)
 
         // 代理服务器
         proxy: {
